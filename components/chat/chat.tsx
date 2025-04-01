@@ -7,9 +7,9 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Send, PaperclipIcon, Code, Eye, Save, Undo } from "lucide-react"
 import { getLatestAppState, type ExtendedMessage, type AppState } from "@/lib/chat-store"
-import { VAHeader } from "@/components/va-header"
-import { VAFooter } from "@/components/va-footer"
-import { ImprovedCodeEditor } from "@/components/improved-code-editor"
+import { VAHeader } from "@/components/va-specific/va-header"
+import { VAFooter } from "@/components/va-specific/va-footer"
+import { ImprovedCodeEditor } from "@/components/editors/improved-code-editor"
 import { extractCodeFromMessage } from "@/lib/code-extractor"
 
 interface ChatProps {
@@ -27,6 +27,7 @@ export default function Chat({ id, initialMessages = [], initialPrompt }: ChatPr
   const [originalCode, setOriginalCode] = useState("")
   const [displayMessages, setDisplayMessages] = useState<ExtendedMessage[]>([])
   const [iframeKey, setIframeKey] = useState(0) // Add key to force iframe refresh
+  const scrollContainerRef = useRef<HTMLDivElement>(null) // Ref for the scrollable chat container
 
   // Initialize appState from initialMessages
   const [appState, setAppState] = useState<AppState>(() => {
@@ -90,6 +91,13 @@ export default function Chat({ id, initialMessages = [], initialPrompt }: ChatPr
       }
     },
   })
+
+  // Set activeTab to code when loading starts
+  useEffect(() => {
+    if (isLoading) {
+      setActiveTab("code");
+    }
+  }, [isLoading]);
 
   // Function to remove code blocks from message content
   const removeCodeBlocks = (content: any): string => {
@@ -173,10 +181,16 @@ export default function Chat({ id, initialMessages = [], initialPrompt }: ChatPr
     }
   }, [input])
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom when messages change, conditionally
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [displayMessages])
+    const container = scrollContainerRef.current
+    if (container) {
+      const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 100 // 100px threshold
+      if (isScrolledToBottom || messages.length <= 1) { // Scroll if near bottom or it's the first message
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+      }
+    }
+  }, [displayMessages, messages.length]) // Added messages.length dependency
 
   // Custom submit handler
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -225,22 +239,62 @@ export default function Chat({ id, initialMessages = [], initialPrompt }: ChatPr
 
   // Create HTML content for the iframe
   const createHtmlContent = () => {
-    // Ensure we have a default export or App component
-    let processedCode = code
-
-    // If code doesn't have export default or function App, wrap it in a default export
-    if (!code.includes("export default") && !code.includes("function App")) {
+    // Create a simplified version of the code that doesn't use imports/exports
+    let processedCode = code;
+    
+    // Check if there's an existing import for the VA component library CSS 
+    const hasVAImport = processedCode.includes("@department-of-veterans-affairs/component-library/dist/main.css");
+    
+    // Remove ALL import statements more aggressively
+    processedCode = processedCode.replace(/^\s*import\s+.*?['"]\s*;?\s*$/gm, '');
+    processedCode = processedCode.replace(/import\s+['"].*?['"]\s*;?\s*/g, '');
+    
+    // Remove export statements but keep the content
+    processedCode = processedCode.replace(/^\s*export\s+default\s+/gm, '');
+    processedCode = processedCode.replace(/^\s*export\s+/gm, '');
+    
+    // More thorough TypeScript type stripping
+    processedCode = processedCode
+      // Remove interface and type definitions
+      .replace(/^\s*interface\s+[\w\s<>,]*\{[^}]*\}\s*$/gm, '')
+      .replace(/^\s*type\s+[\w\s<>=,|&]*(?:=\s*\{[^}]*\})?;?\s*$/gm, '')
+      // Remove type annotations in variable declarations (like React.FC, etc)
+      .replace(/:\s*React\.FC(?:<[^>]*>)?\s*=/g, ' =')
+      .replace(/:\s*React\.FC(?:<[^>]*>)?\s*\(/g, ' (')
+      // More general TypeScript annotations replacements
+      .replace(/:\s*[\w\[\].<>|&(),{}]+\s*(?==)/g, ' =')
+      .replace(/:\s*[\w\[\].<>|&(),{}]+\s*(?=\()/g, ' ')
+      .replace(/:\s*[\w\[\].<>|&(),{}]+\s*(?={)/g, ' ')
+      // Remove generics in JSX and function calls
+      .replace(/<([A-Z][A-Za-z0-9]*)<.*?>(?=[\s(])/g, '<$1')
+      // Remove parameter type annotations
+      .replace(/\(([^)]*)\)\s*:\s*[\w\[\].<>|&(),{}]+/g, '($1)')
+      // Remove comments
+      .replace(/\/\/.*$/gm, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '');
+    
+    // Look for React component pattern with improved regex
+    const componentRegex = /(?:const|function|class|var|let)\s+([A-Z][A-Za-z0-9_]*)\s*(?:=\s*(?:\([^)]*\)\s*=>|\(\))|[({])/g;
+    const matches = [...processedCode.matchAll(componentRegex)];
+    let mainComponentName = 'App';
+    
+    if (matches.length > 0) {
+      // Use the first capitalized component name found
+      mainComponentName = matches[0][1];
+      console.log(`Found component: ${mainComponentName}`);
+    } else {
+      // If no component is found, wrap the code in a component
       processedCode = `
 function App() {
   return (
-    ${code}
+    <div className="va-app-container">
+      ${processedCode}
+    </div>
   );
-}
-
-export default App;
-      `
+}`;
+      mainComponentName = 'App';
     }
-
+    
     return `
       <!DOCTYPE html>
       <html lang="en">
@@ -249,12 +303,12 @@ export default App;
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>VA Prototype Preview</title>
           
-          <!-- React -->
+          <!-- React and ReactDOM -->
           <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
           <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
           <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
           
-          <!-- VA Components and Styles -->
+          <!-- VA Components -->
           <script src="https://unpkg.com/@department-of-veterans-affairs/web-components/dist/va-components.js"></script>
           <link rel="stylesheet" href="https://unpkg.com/@department-of-veterans-affairs/formation/dist/formation.min.css">
           <link rel="stylesheet" href="https://unpkg.com/@department-of-veterans-affairs/component-library/dist/main.css">
@@ -283,44 +337,30 @@ export default App;
             }
             
             #error-display {
+              position: absolute;
+              top: 0; left: 0; right: 0; bottom: 0;
+              background-color: white;
               color: red;
               padding: 20px;
               font-family: monospace;
               white-space: pre-wrap;
+              z-index: 1000;
+              overflow-y: auto;
               display: none;
             }
             
-            /* Ensure VA components are properly displayed */
-            va-button, va-alert {
+            /* VA components styling */
+            va-button, va-alert, va-accordion, va-breadcrumbs {
               display: block;
             }
             
             /* VA Design System Utility Classes */
-            .vads-u-margin-bottom--2 {
-              margin-bottom: 16px !important;
-            }
-            
-            .vads-u-margin-bottom--4 {
-              margin-bottom: 32px !important;
-            }
-            
-            .vads-u-margin-top--2 {
-              margin-top: 16px !important;
-            }
-            
-            .vads-u-margin-top--4 {
-              margin-top: 32px !important;
-            }
-            
-            .vads-u-font-size--h1 {
-              font-size: 2.5rem !important;
-              font-weight: 700 !important;
-            }
-            
-            .vads-u-font-size--h2 {
-              font-size: 1.93rem !important;
-              font-weight: 700 !important;
-            }
+            .vads-u-margin-bottom--2 { margin-bottom: 16px !important; }
+            .vads-u-margin-bottom--4 { margin-bottom: 32px !important; }
+            .vads-u-margin-top--2 { margin-top: 16px !important; }
+            .vads-u-margin-top--4 { margin-top: 32px !important; }
+            .vads-u-font-size--h1 { font-size: 2.5rem !important; font-weight: 700 !important; }
+            .vads-u-font-size--h2 { font-size: 1.93rem !important; font-weight: 700 !important; }
             
             .vads-l-grid-container {
               max-width: 1440px;
@@ -350,13 +390,6 @@ export default App;
               padding-right: 1rem;
             }
             
-            @media (min-width: 768px) {
-              .medium-screen\\:vads-l-col--8 {
-                flex: 0 0 66.66667%;
-                max-width: 66.66667%;
-              }
-            }
-            
             .va-introtext {
               font-family: "Source Sans Pro", sans-serif;
               font-size: 1.25rem;
@@ -365,179 +398,77 @@ export default App;
               margin-top: 1rem;
               margin-bottom: 1rem;
             }
-            
-            /* Alert Styles */
-            .usa-alert {
-              background-color: #f3f3f4;
-              border-left: 0.25rem solid #a6aaad;
-              padding: 16px;
-              position: relative;
-            }
-            
-            .usa-alert--info {
-              background-color: #e7f6f8;
-              border-left-color: #00bde3;
-            }
-            
-            .usa-alert__body {
-              padding-left: 24px;
-            }
-            
-            .usa-alert__heading {
-              font-family: "Source Sans Pro", sans-serif;
-              margin-top: 0;
-              margin-bottom: 8px;
-              font-size: 1.17rem;
-              font-weight: 700;
-              color: #323a45;
-            }
-            
-            .usa-alert__text {
-              margin-bottom: 0;
-              margin-top: 0;
-              font-family: "Source Sans Pro", sans-serif;
-            }
-            
-            /* Button Styles */
-            .usa-button {
-              background-color: #0071bc;
-              color: white;
-              border-radius: 5px;
-              border: none;
-              cursor: pointer;
-              font-weight: 700;
-              font-family: "Source Sans Pro", sans-serif;
-              padding: 10px 20px;
-              text-decoration: none;
-              display: inline-block;
-              font-size: 1rem;
-              line-height: 1.5;
-            }
-            
-            .usa-button:hover {
-              background-color: #205493;
-            }
-            
-            /* Initialize VA Custom Elements */
-            va-breadcrumbs {
-              display: block;
-              margin: 1rem 0;
-            }
-            
-            /* Main container for VA content */
-            .va-sandbox {
-              padding: 1rem 0;
-            }
           </style>
         </head>
         <body>
           <div id="root"></div>
           <div id="error-display"></div>
           
-          <script type="text/babel">
-            // Create the VaBreadcrumbs component
-            function VaBreadcrumbs(props) {
-              // Simple breadcrumbs component to mimic the VA component library
-              return React.createElement('va-breadcrumbs', {
-                'breadcrumb-list': JSON.stringify(props.breadcrumbList),
-                'label': props.label || 'Breadcrumb'
-              });
-            }
-            
-            // Create the VaContentSandbox component that mimics the one in your app
-            function VaContentSandbox(props) {
-              const breadcrumbs = props.breadcrumbs || [
-                { href: "/", label: "VA.gov home" },
-                { href: "#", label: "Current page" },
-              ];
-              
-              return (
-                <div className="va-sandbox" style={{ minHeight: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
-                  <div className="vads-l-grid-container">
-                    <div className="vads-l-row">
-                      <div className="vads-l-col">
-                        <VaBreadcrumbs breadcrumbList={breadcrumbs} label="Breadcrumb" />
-                      </div>
-                    </div>
-                  </div>
+          <script type="text/babel" data-presets="react,typescript">
+            // Set up error handling
+            window.onerror = function(message, source, lineno, colno, error) {
+              console.error("Error in preview:", error);
+              const errorDisplay = document.getElementById('error-display');
+              if (errorDisplay) {
+                errorDisplay.style.display = 'block';
+                errorDisplay.innerHTML = '<h2>Error in preview</h2><pre>' + 
+                  (error ? error.stack || error.toString() : message) + '</pre>';
+              }
+              return true;
+            };
 
-                  <div className="vads-l-grid-container" style={{ flex: "1" }}>
-                    <div className="vads-l-row">
-                      <div className="vads-l-col--12 medium-screen:vads-l-col--8">
-                        {props.title && <h1 className="vads-u-font-size--h1 vads-u-margin-bottom--2">{props.title}</h1>}
-                        {props.children}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+            // Make React and ReactDOM available globally in the script scope
+            const { createElement, useState, useEffect, useRef, useCallback, useMemo } = React;
+
+            // Predefine VA component references so they can be used in the code
+            const VAHeader = (props) => createElement('va-header', props);
+            const VAFooter = (props) => createElement('va-footer', props);
+            const VAButton = (props) => createElement('va-button', props);
+            const VAAlert = (props) => createElement('va-alert', props);
+            const VAAccordion = (props) => createElement('va-accordion', props);
+            const VAAccordionItem = (props) => createElement('va-accordion-item', props);
+            const VATextInput = (props) => createElement('va-text-input', props);
+            const VACheckbox = (props) => createElement('va-checkbox', props);
+            const VARadio = (props) => createElement('va-radio', props);
+            const VASelect = (props) => createElement('va-select', props);
+            const VATextarea = (props) => createElement('va-textarea', props);
+            
+            // VAContentContainer component (commonly used)
+            const VAContentContainer = (props) => {
+              return createElement('div', { 
+                className: 'vads-l-grid-container', 
+                ...props 
+              });
+            };
+
+            try {
+              // Debug the processed code to see what we're trying to execute
+              console.log("Executing code:", \`${processedCode}\`);
+              
+              // Execute the code from the editor
+              ${processedCode}
+              
+              // Render the component (defensive check for existence)
+              const container = document.getElementById('root');
+              if (!container) throw new Error('Root container not found');
+              
+              // Check if the component actually exists
+              if (typeof ${mainComponentName} === 'undefined') {
+                throw new Error('Component ${mainComponentName} not found in the processed code');
+              }
+              
+              ReactDOM.createRoot(container).render(
+                React.createElement(${mainComponentName})
               );
-            }
-            
-            // Initialize VA components
-            function initVAComponents() {
-              if (typeof customElements !== 'undefined' && customElements.get) {
-                if (!customElements.get('va-breadcrumbs')) {
-                  console.log('VA components initializing...');
-                }
+            } catch (err) {
+              console.error("Error rendering component:", err);
+              const errorDisplay = document.getElementById('error-display');
+              if (errorDisplay) {
+                errorDisplay.style.display = 'block';
+                errorDisplay.innerHTML = '<h2>Error rendering component</h2><pre>' + 
+                  (err ? err.stack || err.toString() : 'Unknown error') + '</pre>';
               }
             }
-            
-            initVAComponents();
-            
-            // The actual code to render
-            ${processedCode}
-            
-            // Render the content inside a VaContentSandbox
-            function renderContent() {
-              try {
-                const container = document.getElementById('root');
-                
-                // Add styles to the container
-                if (container) {
-                  container.style.height = '100%';
-                  container.style.minHeight = '600px';
-                  container.style.display = 'flex';
-                  container.style.flexDirection = 'column';
-                }
-                
-                // First check for a custom component in the code
-                if (typeof App !== 'undefined') {
-                  ReactDOM.createRoot(container).render(
-                    <div style={{ height: '100%', minHeight: '600px', display: 'flex', flexDirection: 'column' }}>
-                      <App />
-                    </div>
-                  );
-                } else if (typeof SingleColumnLayout !== 'undefined') {
-                  ReactDOM.createRoot(container).render(
-                    <div style={{ height: '100%', minHeight: '600px', display: 'flex', flexDirection: 'column' }}>
-                      <SingleColumnLayout />
-                    </div>
-                  );
-                } else if (typeof default_1 !== 'undefined') {
-                  ReactDOM.createRoot(container).render(
-                    <div style={{ height: '100%', minHeight: '600px', display: 'flex', flexDirection: 'column' }}>
-                      <default_1 />
-                    </div>
-                  );
-                } else {
-                  // If no component found, wrap the content in a VaContentSandbox
-                  const directContent = (
-                    <VaContentSandbox title="VA Prototype">
-                      <div dangerouslySetInnerHTML={{ __html: \`${code.replace(/`/g, '\\`')}\` }} />
-                    </VaContentSandbox>
-                  );
-                  ReactDOM.createRoot(container).render(directContent);
-                }
-              } catch (error) {
-                console.error("Rendering error:", error);
-                document.getElementById('error-display').style.display = 'block';
-                document.getElementById('error-display').innerHTML = 
-                  '<h2>Error rendering component</h2><pre>' + error.toString() + '</pre>';
-              }
-            }
-            
-            // Render with a delay to ensure components are registered
-            setTimeout(renderContent, 250);
           </script>
         </body>
       </html>
@@ -669,7 +600,7 @@ export default App;
           </div>
 
           {/* Content Area */}
-          <div className="flex-1">
+          <div className="flex-1 overflow-y-auto">
             {activeTab === "preview" && (
               <div className="bg-gray-100 flex-1 p-4 h-full" style={{ height: 'calc(100vh - 180px)', minHeight: '600px' }}>
                 <div className="bg-white border rounded-md shadow-sm max-w-6xl mx-auto h-full" style={{ height: '100%' }}>
@@ -756,10 +687,9 @@ export default App;
             )}
 
             {activeTab === "code" && (
-              <div className="bg-gray-100 flex-1 p-4">
-                <div className="bg-white border rounded-md shadow-sm max-w-7xl mx-auto p-6">
-                  <ImprovedCodeEditor code={code} onChange={handleCodeChange} />
-                </div>
+              <div className="h-full p-1 bg-[#2563eb]">
+                {/* Render the ImprovedCodeEditor here */}
+                <ImprovedCodeEditor code={code} onChange={handleCodeChange} />
               </div>
             )}
           </div>

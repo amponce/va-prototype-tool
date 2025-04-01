@@ -1,21 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import { VAHeader } from "@/components/va-header"
-import { VAFooter } from "@/components/va-footer"
+import { VAHeader } from "@/components/va-specific/va-header"
+import { VAFooter } from "@/components/va-specific/va-footer"
 import { Button } from "@/components/ui/button"
 import { Eye, Code, Save, Undo, ChevronLeft } from "lucide-react"
 import Link from "next/link"
-import { CopayBalancesContent } from "@/components/copay-balances-content"
-import { ImprovedCodeEditor } from "@/components/improved-code-editor"
-import { VABreadcrumbs } from "@/components/va-breadcrumbs"
+import { CopayBalancesContent } from "@/components/content/copay-balances-content"
+import { ImprovedCodeEditor } from "@/components/editors/improved-code-editor"
+import { VABreadcrumbs } from "@/components/va-specific/va-breadcrumbs"
 
 export default function CopayBalancesPage() {
   // Initial code from the example.jsx file
   const [code, setCode] = useState(`import React from "react";
 import { VaBreadcrumbs } from "@department-of-veterans-affairs/component-library/dist/react-bindings";
 import "@department-of-veterans-affairs/component-library/dist/main.css";
-import { VAContentContainer } from "@/components/va-content-container";
+import { VAContentContainer } from "@/components/va-specific/va-content-container";
 
 export default function CopayBalances() {
 return (

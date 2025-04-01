@@ -1,14 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { VAHeader } from "@/components/va-header"
-import { VAFooter } from "@/components/va-footer"
+import { VAHeader } from "@/components/va-specific/va-header"
+import { VAFooter } from "@/components/va-specific/va-footer"
 import { Button } from "@/components/ui/button"
 import { Eye, Code, Save, Undo } from "lucide-react"
 import Link from "next/link"
-import { VaContentSandbox } from "@/components/va-content-sandbox"
-import { ImprovedCodeEditor } from "@/components/improved-code-editor"
-import { VAMaintenanceBannerDemo } from "@/components/va-maintenance-banner-demo"
+import { VaContentSandbox } from "@/components/va-specific/va-content-sandbox"
+import { ImprovedCodeEditor } from "@/components/editors/improved-code-editor"
+import { VAMaintenanceBannerDemo } from "@/components/va-specific/va-maintenance-banner-demo"
 
 export default function SingleColumnPage() {
   // Initial code for the single column layout

@@ -1,5 +1,5 @@
 "use client"
-import { VAContentContainer } from "@/components/va-content-container"
+import { VAContentContainer } from "@/components/va-specific/va-content-container"
 import {
   VaAccordion,
   VaAccordionItem,

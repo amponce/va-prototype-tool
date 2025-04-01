@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Camera, Figma, Upload, LayoutIcon, UserPlus } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ApiKeySetupModal } from "@/components/api-key-setup-modal"
-import { ChatInterface } from "@/components/chat-interface"
+import { ApiKeySetupModal } from "@/components/api/api-key-setup-modal"
+import { ChatInterface } from "@/components/chat/chat-interface"
 
 export default function Home() {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false)

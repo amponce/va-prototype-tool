@@ -1,11 +1,26 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { VAHeader } from "@/components/va-header"
-import { VAFooter } from "@/components/va-footer"
+import { VAHeader } from "@/components/va-specific/va-header"
+import { VAFooter } from "@/components/va-specific/va-footer"
 import { ChevronLeft } from "lucide-react"
 import Link from "next/link"
-import { VAContentContainer } from "@/components/va-content-container"
+import { VAContentContainer } from "@/components/va-specific/va-content-container"
+import { 
+  VaAlert, 
+  VaButton, 
+  VaAccordion,
+  VaAccordionItem,
+  VaTextInput,
+  VaTextarea,
+  VaCheckbox,
+  VaRadio,
+  VaRadioOption,
+  VaSelect,
+  VaDate,
+  VaCard,
+  VaAdditionalInfo
+} from "@department-of-veterans-affairs/component-library/dist/react-bindings"
 
 export default function VAComponentsShowcasePage() {
   const [activeTab, setActiveTab] = useState("buttons")
@@ -76,19 +91,19 @@ export default function VAComponentsShowcasePage() {
                           </p>
 
                           <div className="vads-u-display--flex vads-u-flex-wrap--wrap vads-u-align-items--center vads-u-margin-bottom--4">
-                            <va-button text="Primary Button" uswds></va-button>
+                            <VaButton text="Primary Button"></VaButton>
                             <div className="vads-u-margin-x--2">
-                              <va-button text="Secondary Button" secondary uswds></va-button>
+                              <VaButton text="Secondary Button" secondary></VaButton>
                             </div>
-                            <va-button text="Disabled Button" disabled uswds></va-button>
+                            <VaButton text="Disabled Button" disabled></VaButton>
                           </div>
 
                           <div className="vads-u-margin-top--4">
                             <h3 className="vads-u-font-size--h3 vads-u-margin-bottom--2">Button with Icon</h3>
                             <div className="vads-u-display--flex vads-u-flex-wrap--wrap vads-u-align-items--center vads-u-margin-bottom--4">
-                              <va-button text="Download" icon="download" uswds></va-button>
+                              <VaButton text="Download"></VaButton>
                               <div className="vads-u-margin-x--2">
-                                <va-button text="Print" icon="print" secondary uswds></va-button>
+                                <VaButton text="Print"secondary></VaButton>
                               </div>
                             </div>
                           </div>
@@ -117,26 +132,30 @@ export default function VAComponentsShowcasePage() {
                           </p>
 
                           <div className="vads-u-margin-bottom--4">
-                            <va-alert status="success" visible uswds headline="Success status">
+                            <VaAlert status="success" visible>
+                              <h3 slot="headline" className="vads-u-margin-top--0">Success status</h3>
                               <p>Your application has been successfully submitted.</p>
-                            </va-alert>
+                            </VaAlert>
 
                             <div className="vads-u-margin-top--3">
-                              <va-alert status="warning" visible uswds headline="Warning status">
+                              <VaAlert status="warning" visible>
+                                <h3 slot="headline" className="vads-u-margin-top--0">Warning status</h3>
                                 <p>You have unsaved changes that will be lost if you continue.</p>
-                              </va-alert>
+                              </VaAlert>
                             </div>
 
                             <div className="vads-u-margin-top--3">
-                              <va-alert status="error" visible uswds headline="Error status">
+                              <VaAlert status="error" visible>
+                                <h3 slot="headline" className="vads-u-margin-top--0">Error status</h3>
                                 <p>There was a problem with your submission.</p>
-                              </va-alert>
+                              </VaAlert>
                             </div>
 
                             <div className="vads-u-margin-top--3">
-                              <va-alert status="info" visible uswds headline="Information status">
+                              <VaAlert status="info" visible>
+                                <h3 slot="headline" className="vads-u-margin-top--0">Information status</h3>
                                 <p>This service will be unavailable on Saturday from 8:00 PM to 12:00 AM.</p>
-                              </va-alert>
+                              </VaAlert>
                             </div>
                           </div>
 
@@ -151,8 +170,8 @@ export default function VAComponentsShowcasePage() {
   status="success"
   visible
   uswds
-  headline="Success status"
 >
+  <h3 slot="headline" className="vads-u-margin-top--0">Success status</h3>
   <p>Your application has been successfully submitted.</p>
 </va-alert>`}</code>
                             </pre>
@@ -170,28 +189,28 @@ export default function VAComponentsShowcasePage() {
                           </p>
 
                           <div className="vads-u-margin-bottom--4">
-                            <va-accordion uswds>
-                              <va-accordion-item header="First Amendment" uswds>
+                            <VaAccordion>
+                              <VaAccordionItem header="First Amendment">
                                 <p>
                                   Congress shall make no law respecting an establishment of religion, or prohibiting the
                                   free exercise thereof; or abridging the freedom of speech, or of the press; or the right
                                   of the people peaceably to assemble, and to petition the Government for a redress of
                                   grievances.
                                 </p>
-                              </va-accordion-item>
-                              <va-accordion-item header="Second Amendment" uswds>
+                              </VaAccordionItem>
+                              <VaAccordionItem header="Second Amendment">
                                 <p>
                                   A well regulated Militia, being necessary to the security of a free State, the right of
                                   the people to keep and bear Arms, shall not be infringed.
                                 </p>
-                              </va-accordion-item>
-                              <va-accordion-item header="Third Amendment" uswds>
+                              </VaAccordionItem>
+                              <VaAccordionItem header="Third Amendment">
                                 <p>
                                   No Soldier shall, in time of peace be quartered in any house, without the consent of the
                                   Owner, nor in time of war, but in a manner to be prescribed by law.
                                 </p>
-                              </va-accordion-item>
-                            </va-accordion>
+                              </VaAccordionItem>
+                            </VaAccordion>
                           </div>
 
                           <div className="vads-u-background-color--gray-lightest vads-u-padding--3 vads-u-margin-bottom--4">
@@ -224,37 +243,39 @@ export default function VAComponentsShowcasePage() {
 
                           <div className="vads-u-margin-bottom--4">
                             <div className="vads-u-margin-bottom--3">
-                              <va-text-input label="Text input" name="text-input-example" uswds></va-text-input>
+                              <VaTextInput label="Text input" name="text-input-example"></VaTextInput>
                             </div>
 
                             <div className="vads-u-margin-bottom--3">
-                              <va-textarea label="Text area" name="textarea-example" uswds></va-textarea>
+                              <VaTextarea label="Text area" name="textarea-example"></VaTextarea>
                             </div>
 
                             <div className="vads-u-margin-bottom--3">
-                              <va-checkbox label="Option 1" name="checkbox-example-1" uswds></va-checkbox>
-                              <va-checkbox label="Option 2" name="checkbox-example-2" uswds></va-checkbox>
+                              <VaCheckbox label="Option 1" name="checkbox-example-1"></VaCheckbox>
+                              <VaCheckbox label="Option 2" name="checkbox-example-2"></VaCheckbox>
                             </div>
 
                             <div className="vads-u-margin-bottom--3">
-                              <va-radio label="Option 1" name="radio-example" value="option1" uswds></va-radio>
-                              <va-radio label="Option 2" name="radio-example" value="option2" uswds></va-radio>
+                              <VaRadio label="Radio Button Example">
+                                <VaRadioOption label="Option 1" name="radio-example" value="option1"></VaRadioOption>
+                                <VaRadioOption label="Option 2" name="radio-example" value="option2"></VaRadioOption>
+                              </VaRadio>
                             </div>
 
                             <div className="vads-u-margin-bottom--3">
-                              <va-select label="Select" name="select-example" uswds>
+                              <VaSelect label="Select" name="select-example">
                                 <option value="">- Select -</option>
                                 <option value="1">Option 1</option>
                                 <option value="2">Option 2</option>
                                 <option value="3">Option 3</option>
-                              </va-select>
+                              </VaSelect>
                             </div>
 
                             <div className="vads-u-margin-bottom--3">
-                              <va-date-input label="Date input" name="date-input-example" uswds></va-date-input>
+                              <VaDate label="Date input" name="date-input-example"></VaDate>
                             </div>
 
-                            <va-button text="Submit" uswds></va-button>
+                            <VaButton text="Submit"></VaButton>
                           </div>
 
                           <div className="vads-u-background-color--gray-lightest vads-u-padding--3 vads-u-margin-bottom--4">
@@ -279,7 +300,6 @@ export default function VAComponentsShowcasePage() {
 <va-radio
   label="Option 1"
   name="radio-example"
-  value="option1"
   uswds
 ></va-radio>
 
@@ -292,11 +312,11 @@ export default function VAComponentsShowcasePage() {
   <option value="1">Option 1</option>
 </va-select>
 
-<va-date-input
+<va-date
   label="Date input"
   name="date-input-example"
   uswds
-></va-date-input>`}</code>
+></va-date>`}</code>
                             </pre>
                           </div>
                         </div>
@@ -309,27 +329,26 @@ export default function VAComponentsShowcasePage() {
                           <p className="vads-u-margin-bottom--3">Cards are used to group related content and actions.</p>
 
                           <div className="vads-u-margin-bottom--4">
-                            <va-card show-shadow="true">
+                            <VaCard showShadow={true}>
                               <h3 slot="headline">Card with headline</h3>
                               <p>This is a basic card with a headline and content.</p>
-                              <va-button slot="actions" text="Learn more" uswds></va-button>
-                            </va-card>
+                              <VaButton slot="actions" text="Learn more"></VaButton>
+                            </VaCard>
 
                             <div className="vads-u-margin-top--4">
-                              <va-card show-shadow="true">
+                              <VaCard showShadow={true}>
                                 <img slot="media" src="/placeholder.svg?height=200&width=400" alt="Placeholder" />
                                 <h3 slot="headline">Card with media</h3>
                                 <p>This card includes an image and a headline.</p>
                                 <div slot="actions">
-                                  <va-button text="Primary action" uswds></va-button>
-                                  <va-button
+                                  <VaButton text="Primary action"></VaButton>
+                                  <VaButton
                                     text="Secondary action"
                                     secondary
-                                    uswds
-                                    class="vads-u-margin-left--2"
-                                  ></va-button>
+                                    className="vads-u-margin-left--2"
+                                  ></VaButton>
                                 </div>
-                              </va-card>
+                              </VaCard>
                             </div>
                           </div>
 
@@ -369,7 +388,7 @@ export default function VAComponentsShowcasePage() {
                       )}
 
                       <div className="vads-u-margin-top--6">
-                        <va-additional-info trigger="View more VA components">
+                        <VaAdditionalInfo trigger="View more VA components">
                           <p>
                             The VA Design System includes many more components than what's shown here. Visit the{" "}
                             <a
@@ -394,7 +413,7 @@ export default function VAComponentsShowcasePage() {
                             </a>{" "}
                             to understand how these components are implemented.
                           </p>
-                        </va-additional-info>
+                        </VaAdditionalInfo>
                       </div>
                     </div>
                   </div>

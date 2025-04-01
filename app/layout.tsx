@@ -2,7 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { VAComponentsProvider } from "@/components/va-components-provider"
+import { VAComponentsProvider } from "@/components/theming/va-components-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
