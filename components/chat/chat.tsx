@@ -11,6 +11,7 @@ import { VAHeader } from "@/components/va-specific/va-header"
 import { VAFooter } from "@/components/va-specific/va-footer"
 import { ImprovedCodeEditor } from "@/components/editors/improved-code-editor"
 import { extractCodeFromMessage } from "@/lib/code-extractor"
+import { DynamicComponentPreview } from "@/components/editors/dynamic-component-preview"
 
 interface ChatProps {
   id: string
@@ -602,81 +603,25 @@ function App() {
           {/* Content Area */}
           <div className="flex-1 overflow-y-auto">
             {activeTab === "preview" && (
-              <div className="bg-gray-100 flex-1 p-4 h-full" style={{ height: 'calc(100vh - 180px)', minHeight: '600px' }}>
-                <div className="bg-white border rounded-md shadow-sm max-w-6xl mx-auto h-full" style={{ height: '100%' }}>
+              <div className="bg-gray-100 flex-1 p-4 h-full" style={{ 
+                height: 'calc(100vh - 180px)', 
+                minHeight: '600px', 
+                isolation: 'isolate' 
+              }}>
+                <div className="bg-white border rounded-md shadow-sm max-w-6xl mx-auto h-full" style={{ 
+                  height: '100%',
+                  isolation: 'isolate',
+                  contain: 'strict'
+                }}>
                   {code ? (
-                    <iframe
-                      key={iframeKey} // Add key to force refresh
-                      srcDoc={createHtmlContent()}
-                      className="w-full border-0 bg-white"
-                      style={{ 
-                        height: '100%',
-                        width: '100%',
-                        display: 'block'
-                      }} 
-                      title="VA Prototype Preview"
-                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"
-                      loading="eager"
-                      referrerPolicy="origin"
-                      onLoad={() => {
-                        console.log("iframe loaded")
-                        try {
-                          const iframe = document.querySelector('iframe');
-                          if (iframe) {
-                            // Set precise dimensions to match the container
-                            iframe.style.height = '100%';
-                            iframe.style.width = '100%';
-                            iframe.style.display = 'block';
-                            
-                            // Try to access iframe content directly to apply styles
-                            try {
-                              const iframeDocument = iframe.contentDocument || iframe.contentWindow?.document;
-                              if (iframeDocument) {
-                                // Ensure proper body styling
-                                iframeDocument.body.style.margin = '0';
-                                iframeDocument.body.style.padding = '0';
-                                iframeDocument.body.style.backgroundColor = 'white';
-                                iframeDocument.body.style.height = '100%';
-                                
-                                // Add specific VA classes to match the single layout page
-                                iframeDocument.body.classList.add('vads-u-font-family--sans');
-                                
-                                // Ensure root container takes full height
-                                const rootEl = iframeDocument.getElementById('root');
-                                if (rootEl instanceof HTMLElement) {
-                                  rootEl.style.height = '100%';
-                                  rootEl.style.minHeight = '600px';
-                                }
-                                
-                                // Force styles for containers if needed
-                                const containers = iframeDocument.querySelectorAll('.vads-l-grid-container');
-                                if (containers.length) {
-                                  Array.from(containers).forEach((container: Element) => {
-                                    if (container instanceof HTMLElement) {
-                                      container.style.maxWidth = '1440px';
-                                      container.style.marginLeft = 'auto';
-                                      container.style.marginRight = 'auto';
-                                      container.style.paddingLeft = '1rem';
-                                      container.style.paddingRight = '1rem';
-                                    }
-                                  });
-                                }
-                              }
-                            } catch (domError) {
-                              console.warn("Could not access iframe DOM:", domError);
-                            }
-                          }
-                        } catch (e) {
-                          console.error("Error after iframe load:", e);
-                        }
-                      }}
-                      onError={(e) => {
-                        console.error("Iframe error:", e);
-                        setTimeout(() => {
-                          setIframeKey((prev) => prev + 1);
-                        }, 1000);
-                      }}
-                    />
+                    <div className="preview-iframe-container" style={{
+                      height: '100%',
+                      width: '100%',
+                      overflow: 'hidden',
+                      isolation: 'isolate'
+                    }}>
+                      <DynamicComponentPreview code={code} />
+                    </div>
                   ) : (
                     <div className="flex items-center justify-center h-[600px] text-gray-500">
                       No preview available yet. Ask VA agent to build something!
@@ -687,7 +632,7 @@ function App() {
             )}
 
             {activeTab === "code" && (
-              <div className="h-full p-1 bg-[#2563eb]">
+              <div className="h-full p-1 ">
                 {/* Render the ImprovedCodeEditor here */}
                 <ImprovedCodeEditor code={code} onChange={handleCodeChange} />
               </div>
@@ -700,4 +645,3 @@ function App() {
     </div>
   )
 }
-

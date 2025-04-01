@@ -1,0 +1,34 @@
+/* Preview Container Styles */
+.isolated-preview-container {
+  all: initial; /* Reset all properties */
+  display: block;
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  isolation: isolate;
+  background-color: white;
+  color: black;
+  font-family: system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
+  padding: 20px;
+  border-radius: 4px;
+  contain: content;
+}
+
+/* Prevent CSS from affecting parent page */
+.isolated-preview-container * {
+  contain: content;
+  box-sizing: border-box;
+}
+
+/* Ensure iframe has proper height and isolation */
+iframe {
+  border: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  isolation: isolate;
+  contain: strict;
+  background-color: white;
+} 

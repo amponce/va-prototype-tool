@@ -1,0 +1,116 @@
+/* Reset layout issues */
+iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  display: block !important;
+  position: relative !important;
+}
+
+/* Fix all previews */
+.preview-container {
+  position: relative !important;
+  width: 100% !important;
+  height: calc(100vh - 230px) !important;
+  overflow: auto !important;
+}
+
+/* Fix iframe container */
+.preview-container > div {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Editor container fix */
+.editor-container {
+  width: 100% !important;
+  height: calc(100vh - 230px) !important;
+}
+
+/* Chat layout styles */
+.overflow-wrap-anywhere {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Make sure markdown code blocks don't overflow */
+.prose pre {
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Fix message content styles */
+.prose p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+/* Override Tailwind container width to avoid nesting issues */
+.container {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Improved text wrapping for chat messages */
+.break-words {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+/* Make sure the chat container takes the full height */
+.h-screen {
+  height: 100vh !important;
+}
+
+/* Fixed heights for the message container and form */
+.message-container {
+  height: calc(100vh - 190px) !important;
+  overflow-y: auto;
+}
+
+/* Ensure the form has a fixed height and proper layout */
+.message-form {
+  height: 100px !important;
+  padding: 15px !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  border-top: 1px solid #e5e7eb !important;
+  background-color: #f9fafb !important;
+}
+
+/* Override prose styles to ensure proper display */
+.prose * {
+  max-width: 100% !important;
+  white-space: normal !important;
+}
+
+/* Make text inputs have a consistent height */
+textarea {
+  resize: none !important;
+  width: 100% !important;
+  height: 70px !important;
+  font-size: 16px !important;
+  padding: 12px !important;
+  border-radius: 8px !important;
+  box-sizing: border-box !important;
+  border: 1px solid #d1d5db !important;
+}
+
+/* Input container should take up full width minus button with proper spacing */
+.input-container {
+  flex: 1 !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Make sure the send button is properly sized */
+.send-button {
+  height: 70px !important;
+  min-width: 70px !important;
+  border-radius: 8px !important;
+} 
