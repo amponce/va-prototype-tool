@@ -1,0 +1,41 @@
+/* VA Design System Styles */
+.va-introtext {
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+.remove-bullets {
+  list-style: none;
+  padding-left: 0;
+}
+
+.va-button-link {
+  background: transparent;
+  border: none;
+  color: #0071bc;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.va-button-link:hover {
+  color: #205493;
+}
+
+.feedback-button {
+  background-color: #0071bc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.feedback-button:hover {
+  background-color: #205493;
+}
+

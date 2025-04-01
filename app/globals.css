@@ -1,0 +1,608 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* VA Design System Styles - only applied within the VA content container */
+.va-content-container .va-introtext {
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+.va-content-container .remove-bullets {
+  list-style: none;
+  padding-left: 0;
+}
+
+.va-content-container .va-button-link {
+  background: transparent;
+  border: none;
+  color: #0071bc;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.va-content-container .va-button-link:hover {
+  color: #205493;
+}
+
+.va-content-container .feedback-button {
+  background-color: #0071bc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.va-content-container .feedback-button:hover {
+  background-color: #205493;
+}
+
+/* Ensure VA styles don't leak out */
+.va-content-container {
+  /* Isolate the styles to this container */
+  isolation: isolate;
+}
+
+/* Fix for the tabs styling */
+.shadcn-tabs-list {
+  /* Ensure this container is not affected by VA styles */
+  isolation: isolate;
+}
+
+.shadcn-tab {
+  /* Reset any VA styles that might affect the tabs */
+  all: unset;
+  font-family: inherit;
+  background-color: transparent;
+  position: relative;
+  height: 10;
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  border-radius: 0;
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.shadcn-tab[data-state="active"] {
+  background-color: #f3f4f6;
+  font-weight: 600;
+}
+
+.shadcn-tab:hover {
+  background-color: #f9fafb;
+}
+
+/* Code Editor Styles */
+.code-editor-container textarea {
+  font-family: "Menlo", "Monaco", "Courier New", monospace;
+}
+
+/* Ensure the line numbers column stays fixed */
+.code-editor-container .line-numbers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3rem;
+  height: 100%;
+  background-color: #f3f4f6;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-top: 1rem;
+  padding-right: 0.5rem;
+  user-select: none;
+}
+
+/* Add the following CSS at the end of the file */
+
+/* Two-column layout with sidebar styles */
+.left-side-nav {
+  border-right: 1px solid #d6d7d9;
+  padding-right: 1rem;
+}
+
+.sidenav-header {
+  margin-bottom: 1.5rem;
+}
+
+.va-api-logo-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.va-api-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #112e51;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.usa-sidenav-list {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 2rem;
+}
+
+.usa-sidenav-list a {
+  display: block;
+  padding: 0.5rem 0;
+  color: #0071bc;
+  text-decoration: none;
+  border-bottom: 1px solid #d6d7d9;
+}
+
+.usa-sidenav-list a:hover {
+  color: #205493;
+  background-color: #f1f1f1;
+}
+
+.usa-sidenav-list a.usa-current {
+  color: #112e51;
+  font-weight: 700;
+}
+
+.usa-sidenav-sub_list {
+  list-style: none;
+  padding-left: 1rem;
+  margin: 0;
+}
+
+.usa-sidenav-sub_list a {
+  padding-left: 0.5rem;
+}
+
+.active-page a {
+  color: #112e51;
+  font-weight: 700;
+  background-color: #f1f1f1;
+}
+
+/* Accordion styles */
+.usa-accordion {
+  margin-bottom: 1rem;
+}
+
+.usa-accordion-bordered {
+  border: 1px solid #d6d7d9;
+  border-radius: 4px;
+}
+
+.usa-accordion-button {
+  background-color: #f1f1f1;
+  color: #212121;
+  cursor: pointer;
+  display: flex;
+  font-weight: 700;
+  margin: 0;
+  padding: 1rem;
+  position: relative;
+  text-align: left;
+  width: 100%;
+  border: none;
+}
+
+.usa-accordion-button:hover {
+  background-color: #d6d7d9;
+}
+
+.usa-accordion-button:after {
+  content: "+";
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.usa-accordion-button[aria-expanded="true"]:after {
+  content: "-";
+}
+
+.usa-accordion-content {
+  background-color: white;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.usa-accordion-content[aria-hidden="true"] {
+  display: none;
+}
+
+/* Table styles */
+.usa-table-borderless {
+  width: 100%;
+  border-spacing: 0;
+  margin: 1.5rem 0;
+}
+
+.usa-table-borderless th {
+  background-color: #f1f1f1;
+  text-align: left;
+  padding: 0.75rem;
+}
+
+.usa-table-borderless td {
+  border-top: 1px solid #d6d7d9;
+  padding: 0.75rem;
+}
+
+/* Alert styles */
+.usa-alert {
+  background-color: #f1f1f1;
+  border-left: 4px solid #5b616b;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+}
+
+.usa-alert--info {
+  border-left-color: #02bfe7;
+}
+
+.usa-alert__body {
+  padding-left: 1.5rem;
+}
+
+.usa-alert__heading {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.usa-alert__text {
+  margin-bottom: 0;
+}
+
+/* VA Breadcrumbs Styles */
+.va-breadcrumbs {
+  margin-bottom: 1rem;
+}
+
+.va-breadcrumbs ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.va-breadcrumbs li {
+  display: flex;
+  align-items: center;
+  margin-right: 0.5rem;
+}
+
+.va-breadcrumbs li:not(:last-child)::after {
+  content: "›";
+  margin-left: 0.5rem;
+  color: #5b616b;
+}
+
+.va-breadcrumbs a {
+  color: #0071bc;
+  text-decoration: none;
+}
+
+.va-breadcrumbs a:hover {
+  text-decoration: underline;
+}
+
+/* VA Address Block Styles */
+.va-address-block {
+  background-color: #f1f1f1;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #0071bc;
+}
+
+/* Fix for VA breadcrumbs component */
+va-breadcrumbs {
+  display: block;
+  margin-bottom: 1.5rem;
+}
+
+va-breadcrumbs ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+va-breadcrumbs li {
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+
+va-breadcrumbs li:not(:last-child)::after {
+  content: "›";
+  margin-left: 0.5rem;
+}
+
+va-breadcrumbs a {
+  color: #0071bc;
+  text-decoration: none;
+}
+
+va-breadcrumbs a:hover {
+  text-decoration: underline;
+}
+
+/* Fix for VA accordion component */
+va-accordion {
+  display: block;
+  margin-bottom: 1.5rem;
+}
+
+va-accordion-item {
+  display: block;
+  margin-bottom: 0.5rem;
+  border: 1px solid #d6d7d9;
+}
+
+va-accordion-item h4[slot="headline"] {
+  background-color: #f1f1f1;
+  padding: 1rem;
+  margin: 0;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+va-accordion-item h4[slot="headline"]:hover {
+  background-color: #e1e1e1;
+}
+
+/* Fix for VA table component */
+va-table {
+  display: block;
+  margin-bottom: 1.5rem;
+}
+
+va-table-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+}
+
+va-table-row:first-child {
+  background-color: #f1f1f1;
+  font-weight: 700;
+}
+
+va-table-row:not(:first-child) {
+  border-top: 1px solid #d6d7d9;
+}
+
+va-table-row span {
+  padding: 0.75rem;
+}
+
+/* Chat interface specific styles */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.messages-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.message {
+  max-width: 80%;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  word-break: break-word;
+}
+
+.message-user {
+  align-self: flex-end;
+  background-color: #e9f5ff;
+}
+
+.message-assistant {
+  align-self: flex-start;
+  background-color: #f1f5f9;
+}
+
+.input-container {
+  padding: 1rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.textarea-wrapper {
+  position: relative;
+  flex-grow: 1;
+}
+
+.input-textarea {
+  width: 100%;
+  resize: none;
+  min-height: 50px;
+  max-height: 200px;
+  padding: 0.75rem 1rem;
+  padding-right: 2.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid #e2e8f0;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* Side-by-side view styles */
+.side-by-side-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .side-by-side-container {
+    flex-direction: row;
+  }
+}
+
+.code-preview {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.code-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.code-preview-content {
+  flex-grow: 1;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.code-block {
+  background-color: #f8fafc;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  overflow-x: auto;
+  font-family: monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* Chat input specific styles */
+.chat-input-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.chat-input-textarea {
+  width: 100%;
+  resize: none;
+  min-height: 50px;
+  padding: 0.75rem 1rem;
+  padding-right: 2.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid #e2e8f0;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+}
+
+.chat-input-textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Ensure the textarea auto-resizes properly */
+.auto-resize-textarea {
+  overflow: hidden;
+  resize: none;
+  transition: height 0.1s ease;
+}
+
