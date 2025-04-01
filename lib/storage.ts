@@ -6,6 +6,10 @@ import type { Message } from "ai";
 // Define the path to the storage file
 const STORAGE_FILE_PATH = process.env.STORAGE_FILE_PATH || path.join(process.cwd(), 'data', 'chats.json');
 
+// Use in-memory fallback when file system operations fail (e.g., in serverless environments)
+let inMemoryStorage: { [chatId: string]: ChatMessage[] } = {};
+let usingInMemory = false;
+
 // Type definitions
 // Type for our application state that includes code and preview state
 export interface AppState {
@@ -67,18 +71,20 @@ async function ensureStorageExists(): Promise<void> {
     // Check if directory exists, create if it doesn't
     try {
       await fs.access(directory);
-    } catch (error) {
+    } catch (error: unknown) {
       await fs.mkdir(directory, { recursive: true });
     }
     
     // Check if file exists, create if it doesn't
     try {
       await fs.access(STORAGE_FILE_PATH);
-    } catch (error) {
+    } catch (error: unknown) {
       await fs.writeFile(STORAGE_FILE_PATH, JSON.stringify({}), 'utf-8');
     }
-  } catch (error) {
-    throw new Error(`Failed to ensure storage exists: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.warn(`Using in-memory storage: ${errorMessage}`);
+    usingInMemory = true;
   }
 }
 
@@ -87,15 +93,18 @@ async function ensureStorageExists(): Promise<void> {
  */
 async function readStorage(): Promise<StorageData> {
   try {
+    if (usingInMemory) {
+      return inMemoryStorage;
+    }
+    
     await ensureStorageExists();
     const data = await fs.readFile(STORAGE_FILE_PATH, 'utf-8');
     return JSON.parse(data || '{}');
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      // Handle JSON parse error
-      throw new Error(`Storage file contains invalid JSON: ${error.message}`);
-    }
-    throw new Error(`Failed to read storage: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.warn(`Reading from in-memory storage: ${errorMessage}`);
+    usingInMemory = true;
+    return inMemoryStorage;
   }
 }
 
@@ -103,6 +112,11 @@ async function readStorage(): Promise<StorageData> {
  * Writes data to the storage file atomically
  */
 async function writeStorage(data: StorageData): Promise<void> {
+  if (usingInMemory) {
+    inMemoryStorage = { ...data };
+    return;
+  }
+  
   try {
     await ensureStorageExists();
     
@@ -114,8 +128,11 @@ async function writeStorage(data: StorageData): Promise<void> {
     
     // Atomically replace the original file with the temporary file
     await fs.rename(tempFilePath, STORAGE_FILE_PATH);
-  } catch (error) {
-    throw new Error(`Failed to write to storage: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.warn(`Writing to in-memory storage: ${errorMessage}`);
+    usingInMemory = true;
+    inMemoryStorage = { ...data };
   }
 }
 
@@ -132,8 +149,14 @@ export async function createChat(): Promise<string> {
     
     await writeStorage(storage);
     return id;
-  } catch (error) {
-    throw new Error(`Failed to create chat: ${error.message}`);
+  } catch (error: unknown) {
+    // Fallback to create an in-memory chat if storage fails
+    const id = uuidv4();
+    inMemoryStorage[id] = [];
+    usingInMemory = true;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`Falling back to in-memory storage for chat creation: ${errorMessage}`);
+    return id;
   }
 }
 
@@ -148,8 +171,12 @@ export async function saveChat(id: string, messages: ChatMessage[]): Promise<voi
     storage[id] = messages;
     
     await writeStorage(storage);
-  } catch (error) {
-    throw new Error(`Failed to save chat: ${error.message}`);
+  } catch (error: unknown) {
+    // Fallback to save in memory
+    inMemoryStorage[id] = [...messages];
+    usingInMemory = true;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`Falling back to in-memory storage for chat save: ${errorMessage}`);
   }
 }
 
@@ -162,8 +189,11 @@ export async function loadChat(id: string): Promise<ChatMessage[]> {
     
     // Return the chat messages or an empty array if not found
     return storage[id] || [];
-  } catch (error) {
-    throw new Error(`Failed to load chat: ${error.message}`);
+  } catch (error: unknown) {
+    // Fallback to load from memory
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`Falling back to in-memory storage for chat load: ${errorMessage}`);
+    return inMemoryStorage[id] || [];
   }
 }
 
@@ -184,8 +214,13 @@ export async function deleteChat(id: string): Promise<boolean> {
     
     await writeStorage(storage);
     return true;
-  } catch (error) {
-    throw new Error(`Failed to delete chat: ${error.message}`);
+  } catch (error: unknown) {
+    // Fallback to delete from memory
+    if (inMemoryStorage[id]) {
+      delete inMemoryStorage[id];
+      return true;
+    }
+    return false;
   }
 }
 
@@ -196,8 +231,10 @@ export async function listChats(): Promise<string[]> {
   try {
     const storage = await readStorage();
     return Object.keys(storage);
-  } catch (error) {
-    throw new Error(`Failed to list chats: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`Falling back to in-memory storage for chat listing: ${errorMessage}`);
+    return Object.keys(inMemoryStorage);
   }
 }
 
@@ -206,8 +243,9 @@ export async function listChats(): Promise<string[]> {
  */
 export function getLatestAppState(messages: ExtendedMessage[] | ChatMessage[]): AppState {
   for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i].appState) {
-      return messages[i].appState;
+    const appState = messages[i].appState;
+    if (appState) {
+      return appState;
     }
   }
   return defaultAppState;
