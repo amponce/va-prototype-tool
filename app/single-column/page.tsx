@@ -185,7 +185,7 @@ export default function SingleColumnLayout() {
 
       {/* Custom Tab Navigation */}
       <div className="bg-gray-100 border-b">
-        <div className="container mx-auto">
+        <div className="container mx-auto px-4">
           <div className="flex">
             <button
               onClick={() => setActiveTab("preview")}

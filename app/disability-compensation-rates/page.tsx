@@ -180,7 +180,7 @@ export default function DisabilityCompensationRates() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <VAHeader />
+     <VAHeader />
       <div className="bg-gray-100 border-b">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
@@ -215,7 +215,7 @@ export default function DisabilityCompensationRates() {
 
       {/* Custom Tab Navigation */}
       <div className="bg-gray-100 border-b">
-        <div className="container mx-auto">
+        <div className="container mx-auto px-4">
           <div className="flex">
             <button
               onClick={() => setActiveTab("preview")}

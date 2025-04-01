@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Simple fix for breadcrumb links */
+.bg-gray-100 a.text-blue-600 {
+  color: #2563eb !important;
+}
+
+/* Fix for preview and code tabs alignment */
+.bg-gray-100 .container.mx-auto > div.flex > button {
+  margin-left: 0;
+}
+.bg-gray-100 .container.mx-auto {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  max-width: 80rem; /* Match the container width used elsewhere */
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
