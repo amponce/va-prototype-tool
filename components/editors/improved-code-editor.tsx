@@ -49,9 +49,9 @@ export function ImprovedCodeEditor({ code, onChange }: ImprovedCodeEditorProps) 
   }
 
   return (
-    <div className="code-editor-container">
+    <div className="code-editor-container h-full flex flex-col" style={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
       <div className="mb-4 text-sm text-gray-500">Edit the code below to modify the component:</div>
-      <div className="relative border rounded-md overflow-hidden">
+      <div className="relative border rounded-md overflow-hidden flex-grow" style={{ width: '100%', maxWidth: '100%' }}>
         <div className="absolute top-0 left-0 w-12 h-full bg-gray-100 border-r flex flex-col items-end">
           {Array.from({ length: lineCount }).map((_, i) => (
             <div key={i} className="text-right pr-2 text-gray-500 text-xs" style={{ lineHeight: 1.5, height: "1.5em" }}>
@@ -66,7 +66,13 @@ export function ImprovedCodeEditor({ code, onChange }: ImprovedCodeEditorProps) 
           onKeyDown={handleKeyDown}
           className="w-full min-h-[600px] p-4 pl-16 font-mono text-sm bg-gray-900 text-gray-100 resize-none"
           spellCheck="false"
-          style={{ lineHeight: 1.5, tabSize: 2 }}
+          style={{ 
+            lineHeight: 1.5, 
+            tabSize: 2, 
+            width: 'calc(100% - 12px)', 
+            maxWidth: '100%',
+            boxSizing: 'border-box'
+          }}
         />
       </div>
       <div className="mt-2 text-sm text-gray-500 flex justify-between">
