@@ -1,12 +1,20 @@
 "use client"
 
 import { useState } from "react"
-import { VAHeader } from "@/components/va-header"
-import { VAFooter } from "@/components/va-footer"
+import { VAHeader } from "@/components/va-specific/va-header"
+import { VAFooter } from "@/components/va-specific/va-footer"
 import { ChevronLeft } from "lucide-react"
 import Link from "next/link"
-import { VAContentContainer } from "@/components/va-content-container"
-import { ImprovedCodeEditor } from "@/components/improved-code-editor"
+import { VAContentContainer } from "@/components/va-specific/va-content-container"
+import { ImprovedCodeEditor } from "@/components/editors/improved-code-editor"
+import {
+  VaAlert,
+  VaTextInput,
+  VaButton,
+  VaAccordion,
+  VaAccordionItem,
+  VaTable
+} from "@department-of-veterans-affairs/component-library/dist/react-bindings"
 
 export default function AICodeGeneratorPage() {
   const [prompt, setPrompt] = useState("")
@@ -42,23 +50,28 @@ export default function GeneratedComponent() {
               This component was generated based on your prompt.
             </p>
             
-            <va-alert
-              status="info"
-              visible
-              uswds
-              headline="This is a generated component"
-            >
+            <VaAlert status="info" visible>
+              <h3 slot="headline" className="vads-u-margin-top--0">About VA Web Components</h3>
               <p>
-                You can customize this component to fit your needs.
+                This tool generates code using the official VA web components from the{" "}
+                <a
+                  href="https://design.va.gov/storybook/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="vads-u-color--primary"
+                >
+                  VA Design System
+                </a>
+                . These components ensure your prototypes follow VA design guidelines and accessibility
+                standards.
               </p>
-            </va-alert>
+            </VaAlert>
             
             <div className="vads-u-margin-top--4">
-              <va-button
+              <VaButton
                 text="Primary Button"
                 onClick={() => console.log("Button clicked")}
-                uswds
-              ></va-button>
+              ></VaButton>
             </div>
           </div>
         </div>
@@ -107,7 +120,8 @@ export default function GeneratedComponent() {
                       the code for you using official VA web components.
                     </p>
 
-                    <va-alert status="info" visible uswds headline="About VA Web Components">
+                    <VaAlert status="info" visible>
+                      <h3 slot="headline" className="vads-u-margin-top--0">About VA Web Components</h3>
                       <p>
                         This tool generates code using the official VA web components from the{" "}
                         <a
@@ -121,27 +135,25 @@ export default function GeneratedComponent() {
                         . These components ensure your prototypes follow VA design guidelines and accessibility
                         standards.
                       </p>
-                    </va-alert>
+                    </VaAlert>
 
                     <div className="vads-u-margin-top--4 vads-u-margin-bottom--4">
-                      <va-text-input
+                      <VaTextInput
                         label="Describe the VA component you want to create:"
                         name="prompt"
                         value={prompt}
-                        onInput={(e) => setPrompt(e.target.value)}
-                        uswds
-                      ></va-text-input>
+                        onInput={(e: any) => setPrompt(e.target.value)}
+                      ></VaTextInput>
                       <p className="vads-u-font-style--italic vads-u-margin-top--1 vads-u-margin-bottom--2 vads-u-color--gray-medium">
                         Example: Create a form with name, email, and phone number fields, and a submit button. Include
                         validation and error messages.
                       </p>
                       <div className="vads-u-margin-top--2">
-                        <va-button
+                        <VaButton
                           text={isGenerating ? "Generating..." : "Generate Code"}
                           onClick={generateCode}
                           disabled={isGenerating || !prompt.trim()}
-                          uswds
-                        ></va-button>
+                        ></VaButton>
                       </div>
                     </div>
 
@@ -149,12 +161,11 @@ export default function GeneratedComponent() {
                       <div className="vads-u-margin-bottom--4">
                         <div className="vads-u-display--flex vads-u-justify-content--between vads-u-align-items--center vads-u-margin-bottom--2">
                           <h2 className="vads-u-font-size--h3 vads-u-margin--0">Generated Code</h2>
-                          <va-button
+                          <VaButton
                             text={copied ? "Copied!" : "Copy Code"}
                             onClick={copyToClipboard}
                             secondary
-                            uswds
-                          ></va-button>
+                          ></VaButton>
                         </div>
                         <div className="code-editor-container">
                           <ImprovedCodeEditor code={generatedCode} onChange={setGeneratedCode} />
@@ -162,8 +173,8 @@ export default function GeneratedComponent() {
                       </div>
                     )}
 
-                    <va-accordion uswds>
-                      <va-accordion-item header="Implementation Guide" uswds>
+                    <VaAccordion>
+                      <VaAccordionItem header="Implementation Guide">
                         <h3 className="vads-u-font-size--h3 vads-u-margin-top--0">
                           How to Implement This AI Code Generator
                         </h3>
@@ -270,9 +281,9 @@ const generateCode = async () => {
   }
 }`}</code>
                         </pre>
-                      </va-accordion-item>
+                      </VaAccordionItem>
 
-                      <va-accordion-item header="Best Practices" uswds>
+                      <VaAccordionItem header="Best Practices">
                         <h3 className="vads-u-font-size--h3 vads-u-margin-top--0">
                           Best Practices for VA Component Generation
                         </h3>
@@ -305,13 +316,13 @@ const generateCode = async () => {
                           <li className="vads-u-margin-bottom--1">Ensure all components are accessible</li>
                           <li>Use VA color palette and design tokens</li>
                         </ul>
-                      </va-accordion-item>
+                      </VaAccordionItem>
 
-                      <va-accordion-item header="VA Component Reference" uswds>
+                      <VaAccordionItem header="VA Component Reference">
                         <h3 className="vads-u-font-size--h3 vads-u-margin-top--0">Common VA Web Components</h3>
                         <p>Here's a reference of commonly used VA web components:</p>
 
-                        <va-table>
+                        <VaTable>
                           <thead slot="headers">
                             <tr>
                               <th>Component</th>
@@ -377,7 +388,7 @@ const generateCode = async () => {
                               </td>
                             </tr>
                           </tbody>
-                        </va-table>
+                        </VaTable>
 
                         <p className="vads-u-margin-top--4">
                           For a complete reference, visit the{" "}
@@ -391,8 +402,8 @@ const generateCode = async () => {
                           </a>
                           .
                         </p>
-                      </va-accordion-item>
-                    </va-accordion>
+                      </VaAccordionItem>
+                    </VaAccordion>
                   </div>
                 </div>
               </div>

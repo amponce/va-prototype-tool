@@ -1,8 +1,8 @@
 "use client"
 
-import { VAHeader } from "@/components/va-header"
-import { VAFooter } from "@/components/va-footer"
-import { VAExample } from "@/components/va-example"
+import { VAHeader } from "@/components/va-specific/va-header"
+import { VAFooter } from "@/components/va-specific/va-footer"
+import { VAExample } from "@/components/va-specific/va-example"
 import Link from "next/link"
 
 export default function VAComponentsExamplePage() {

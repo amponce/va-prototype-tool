@@ -1,6 +1,6 @@
 "use client"
-import { VAContentContainer } from "@/components/va-content-container"
-
+import { VAContentContainer } from "@/components/va-specific/va-content-container"
+import { VaMaintenanceBanner } from "@department-of-veterans-affairs/component-library/dist/react-bindings"
 export function VAMaintenanceBannerDemo() {
   return (
     <VAContentContainer>
@@ -10,14 +10,14 @@ export function VAMaintenanceBannerDemo() {
           This demonstrates how to use the va-maintenance-banner component from the VA component library.
         </p>
         <div className="vads-u-background-color--gray-lightest vads-u-padding--3 vads-u-margin-bottom--3">
-          <va-maintenance-banner
-            banner-id="maintenance-banner"
-            is-error
-            maintenance-end-date-time="Sun Jun 21 2099 04:30:00 GMT-0700 (Pacific Daylight Time)"
-            maintenance-start-date-time="Sun Jun 21 2099 00:00:00 GMT-0700 (Pacific Daylight Time)"
-            maintenance-title="Site maintenance"
-            upcoming-warn-start-date-time="Sun Mar 30 2025 19:38:11 GMT-0700 (Pacific Daylight Time)"
-            upcoming-warn-title="Upcoming site maintenance"
+          <VaMaintenanceBanner
+            bannerId="maintenance-banner"
+            isError
+            maintenanceEndDateTime="Sun Jun 21 2099 04:30:00 GMT-0700 (Pacific Daylight Time)"
+            maintenanceStartDateTime="Sun Jun 21 2099 00:00:00 GMT-0700 (Pacific Daylight Time)"
+            maintenanceTitle="Site maintenance"
+            upcomingWarnStartDateTime="Sun Mar 30 2025 19:38:11 GMT-0700 (Pacific Daylight Time)"
+            upcomingWarnTitle="Upcoming site maintenance"
           >
             <div slot="warn-content">
               <span>
@@ -29,7 +29,7 @@ export function VAMaintenanceBannerDemo() {
               We're working on VA.gov right now. If you have trouble signing in or using tools, check back after we're
               finished. Thank you for your patience.
             </div>
-          </va-maintenance-banner>
+          </VaMaintenanceBanner>
         </div>
       </div>
     </VAContentContainer>

@@ -1,5 +1,5 @@
-import { VAHeader } from "@/components/va-header"
-import { VAFooter } from "@/components/va-footer"
+import { VAHeader } from "@/components/va-specific/va-header"
+import { VAFooter } from "@/components/va-specific/va-footer"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Eye, Code, Download, Share2 } from "lucide-react"

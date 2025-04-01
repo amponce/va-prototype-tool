@@ -1,5 +1,5 @@
 import { loadChat } from "@/lib/storage"
-import Chat from "@/components/chat"
+import Chat from "@/components/chat/chat"
 
 export default async function Page({
   params,
@@ -15,10 +15,17 @@ export default async function Page({
     // Load existing messages
     const messages = await loadChat(id)
 
+    // Convert createdAt and assert role type for ExtendedMessage compatibility
+    const extendedMessages = messages.map(message => ({
+      ...message,
+      role: message.role as 'data' | 'system' | 'user' | 'assistant', // Assert role type
+      createdAt: new Date(message.createdAt),
+    }));
+
     return (
       <Chat
         id={id}
-        initialMessages={messages}
+        initialMessages={extendedMessages}
         initialPrompt={initialMessage ? decodeURIComponent(initialMessage) : undefined}
       />
     )

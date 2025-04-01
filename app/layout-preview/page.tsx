@@ -1,7 +1,7 @@
 "use client"
 
-import { VAHeader } from "@/components/va-header"
-import { VAFooter } from "@/components/va-footer"
+import { VAHeader } from "@/components/va-specific/va-header"
+import { VAFooter } from "@/components/va-specific/va-footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"

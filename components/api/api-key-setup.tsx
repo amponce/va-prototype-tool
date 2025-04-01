@@ -3,7 +3,35 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { VAContentContainer } from "@/components/va-content-container"
+import { VAContentContainer } from "@/components/va-specific/va-content-container"
+import { VaAlert, VaButton, VaTextInput } from "@department-of-veterans-affairs/component-library/dist/react-bindings"
+
+// Add TypeScript declarations for VA custom elements
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'va-alert': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
+        status?: string;
+        visible?: boolean;
+        uswds?: boolean;
+        headline?: string;
+      }, HTMLElement>;
+      'va-text-input': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
+        label?: string;
+        name?: string;
+        value?: string;
+        onInput?: (event: any) => void; // Use a more specific type if available
+        uswds?: boolean;
+      }, HTMLElement>;
+      'va-button': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
+        text?: string;
+        onClick?: (event: any) => void; // Use a more specific type if available
+        disabled?: boolean;
+        uswds?: boolean;
+      }, HTMLElement>;
+    }
+  }
+}
 
 export function ApiKeySetup() {
   const [apiKey, setApiKey] = useState("")
@@ -62,9 +90,10 @@ export function ApiKeySetup() {
 
   if (isKeySet) {
     return (
-      <va-alert status="success" visible uswds headline="OpenAI API Key is set">
+      <VaAlert status="success" visible>
+        <h3 slot="headline" className="vads-u-margin-top--0">OpenAI API Key is set</h3>
         <p>Your OpenAI API key is configured. You can now use the AI code generator.</p>
-      </va-alert>
+      </VaAlert>
     )
   }
 
@@ -78,29 +107,28 @@ export function ApiKeySetup() {
         </p>
 
         <form onSubmit={handleSubmit}>
-          <va-text-input
+          <VaTextInput
             label="OpenAI API Key"
             name="apiKey"
             value={apiKey}
             onInput={(e: any) => setApiKey(e.target.value)}
-            uswds
-          ></va-text-input>
+          ></VaTextInput>
 
           {error && (
             <div className="vads-u-margin-top--2">
-              <va-alert status="error" visible uswds headline="Error">
+              <VaAlert status="error" visible>
+                 <h3 slot="headline" className="vads-u-margin-top--0">Error</h3>
                 <p>{error}</p>
-              </va-alert>
+              </VaAlert>
             </div>
           )}
 
           <div className="vads-u-margin-top--3">
-            <va-button
+            <VaButton
               text={isSubmitting ? "Saving..." : "Save API Key"}
               onClick={handleSubmit}
               disabled={isSubmitting || !apiKey.trim()}
-              uswds
-            ></va-button>
+            ></VaButton>
           </div>
         </form>
       </div>

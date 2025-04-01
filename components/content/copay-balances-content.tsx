@@ -1,6 +1,6 @@
 "use client"
 import { VaBreadcrumbs } from "@department-of-veterans-affairs/component-library/dist/react-bindings"
-import { VAContentContainer } from "@/components/va-content-container"
+import { VAContentContainer } from "@/components/va-specific/va-content-container"
 
 export function CopayBalancesContent() {
   return (
