@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, Suspense } from 'react'
 import { VAHeader } from '@/components/va-specific/va-header'
 import { VAFooter } from '@/components/va-specific/va-footer'
 import dynamic from 'next/dynamic'
@@ -8,7 +8,19 @@ import { useSearchParams } from 'next/navigation'
 import '@department-of-veterans-affairs/component-library/dist/main.css'
 import '@department-of-veterans-affairs/formation/dist/formation.min.css'
 
-export default function PreviewPage() {
+// Loading component
+const LoadingComponent = () => (
+  <div className="vads-u-padding--5 vads-u-text-align--center">
+    <div className="vads-loader-container">
+      <div className="vads-loader vads-loader--active">
+        <span className="vads-u-sr-only">Loading component preview...</span>
+      </div>
+    </div>
+    <p className="vads-u-padding-top--3">Loading component preview...</p>
+  </div>
+);
+
+function PreviewContent() {
   const searchParams = useSearchParams()
   const componentId = searchParams.get('id')
   const [error, setError] = useState<string | null>(null)
@@ -75,16 +87,7 @@ export default function PreviewPage() {
       })
     },
     {
-      loading: () => (
-        <div className="vads-u-padding--5 vads-u-text-align--center">
-          <div className="vads-loader-container">
-            <div className="vads-loader vads-loader--active">
-              <span className="vads-u-sr-only">Loading component preview...</span>
-            </div>
-          </div>
-          <p className="vads-u-padding-top--3">Loading component preview...</p>
-        </div>
-      ),
+      loading: () => <LoadingComponent />,
       ssr: false
     }
   )
@@ -110,6 +113,14 @@ export default function PreviewPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PreviewPage() {
+  return (
+    <Suspense fallback={<LoadingComponent />}>
+      <PreviewContent />
+    </Suspense>
   )
 }
 
