@@ -44,8 +44,15 @@ export default function Chat({ id, initialMessages = [], initialPrompt }: ChatPr
       id,
     },
     onFinish: (message) => {
+      // Handle object content
+      const messageContent = typeof message.content === 'string' 
+        ? message.content 
+        : typeof message.content === 'object' && message.content !== null
+          ? JSON.stringify(message.content)
+          : String(message.content);
+          
       // Extract code from the message
-      const extractedCode = extractCodeFromMessage(message.content)
+      const extractedCode = extractCodeFromMessage(messageContent)
 
       if (extractedCode) {
         // Update code state
@@ -63,27 +70,44 @@ export default function Chat({ id, initialMessages = [], initialPrompt }: ChatPr
         // Save to server
         saveAppState(newAppState)
 
-        // Switch to preview tab to show the result
-        setActiveTab("preview")
-
+        // Show code first, then automatically switch to preview after a delay
+        setActiveTab("code")
+        
         // Force iframe refresh
         setIframeKey((prev) => prev + 1)
+        
+        // Switch to preview after a short delay to allow the iframe to load
+        setTimeout(() => {
+          // Force another iframe refresh before showing
+          setIframeKey((prev) => prev + 1)
+          setActiveTab("preview")
+          
+          // Add another refresh after showing preview to ensure content is displayed
+          setTimeout(() => {
+            setIframeKey((prev) => prev + 1)
+          }, 300)
+        }, 800)
       }
     },
   })
 
   // Function to remove code blocks from message content
-  const removeCodeBlocks = (content: string): string => {
-    // Remove code blocks with language specifier
-    let cleaned = content.replace(
-      /```(?:jsx|tsx|javascript|typescript)[\s\S]*?```/g,
-      "(Code has been moved to the code editor panel)",
-    )
-
-    // Remove any remaining code blocks
-    cleaned = cleaned.replace(/```[\s\S]*?```/g, "(Code has been moved to the code editor panel)")
-
-    return cleaned
+  const removeCodeBlocks = (content: any): string => {
+    // Handle non-string content
+    if (typeof content !== 'string') {
+      return "I've generated code for you! Check the code panel to view and edit it.";
+    }
+    
+    // Remove all code blocks with more aggressive approach
+    let cleaned = content;
+    
+    // Check if the content contains code blocks
+    if (content.includes("```")) {
+      // Replace the entire content with a simpler message
+      return "I've generated code for you! Check the code panel to view and edit it.";
+    }
+    
+    return cleaned;
   }
 
   // Save app state to server
@@ -106,6 +130,11 @@ export default function Chat({ id, initialMessages = [], initialPrompt }: ChatPr
   // Update displayMessages when messages change
   useEffect(() => {
     const newDisplayMessages = messages.map((message) => {
+      // Ensure each message has an id
+      if (!message.id) {
+        message.id = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      }
+      
       if (message.role === "assistant") {
         return {
           ...message,
@@ -214,24 +243,190 @@ export default App;
 
     return `
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>VA Prototype Preview</title>
+          
+          <!-- React -->
           <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
           <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
           <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+          
+          <!-- VA Components and Styles -->
+          <script src="https://unpkg.com/@department-of-veterans-affairs/web-components/dist/va-components.js"></script>
+          <link rel="stylesheet" href="https://unpkg.com/@department-of-veterans-affairs/formation/dist/formation.min.css">
+          <link rel="stylesheet" href="https://unpkg.com/@department-of-veterans-affairs/component-library/dist/main.css">
+          
+          <!-- Tailwind CSS -->
           <script src="https://cdn.tailwindcss.com"></script>
-          <script type="module" src="https://unpkg.com/@department-of-veterans-affairs/web-components/dist/va-components.esm.js"></script>
-          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@department-of-veterans-affairs/component-library/dist/main.css">
+          
+          <!-- Font Awesome -->
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+          
           <style>
-            body { margin: 0; padding: 0; }
+            html, body { 
+              margin: 0; 
+              padding: 0; 
+              font-family: 'Source Sans Pro', sans-serif;
+              background-color: white;
+              height: 100%;
+              width: 100%;
+            }
+            
+            #root {
+              min-height: 100%;
+              height: 100%;
+              display: flex;
+              flex-direction: column;
+            }
+            
             #error-display {
               color: red;
               padding: 20px;
               font-family: monospace;
               white-space: pre-wrap;
               display: none;
+            }
+            
+            /* Ensure VA components are properly displayed */
+            va-button, va-alert {
+              display: block;
+            }
+            
+            /* VA Design System Utility Classes */
+            .vads-u-margin-bottom--2 {
+              margin-bottom: 16px !important;
+            }
+            
+            .vads-u-margin-bottom--4 {
+              margin-bottom: 32px !important;
+            }
+            
+            .vads-u-margin-top--2 {
+              margin-top: 16px !important;
+            }
+            
+            .vads-u-margin-top--4 {
+              margin-top: 32px !important;
+            }
+            
+            .vads-u-font-size--h1 {
+              font-size: 2.5rem !important;
+              font-weight: 700 !important;
+            }
+            
+            .vads-u-font-size--h2 {
+              font-size: 1.93rem !important;
+              font-weight: 700 !important;
+            }
+            
+            .vads-l-grid-container {
+              max-width: 1440px;
+              margin-left: auto;
+              margin-right: auto;
+              padding-left: 1rem;
+              padding-right: 1rem;
+            }
+            
+            .vads-l-row {
+              display: flex;
+              flex-wrap: wrap;
+              margin-left: -1rem;
+              margin-right: -1rem;
+            }
+            
+            .vads-l-col {
+              flex: 0 0 100%;
+              padding-left: 1rem;
+              padding-right: 1rem;
+            }
+            
+            .vads-l-col--12 {
+              flex: 0 0 100%;
+              max-width: 100%;
+              padding-left: 1rem;
+              padding-right: 1rem;
+            }
+            
+            @media (min-width: 768px) {
+              .medium-screen\\:vads-l-col--8 {
+                flex: 0 0 66.66667%;
+                max-width: 66.66667%;
+              }
+            }
+            
+            .va-introtext {
+              font-family: "Source Sans Pro", sans-serif;
+              font-size: 1.25rem;
+              font-weight: 400;
+              line-height: 1.65;
+              margin-top: 1rem;
+              margin-bottom: 1rem;
+            }
+            
+            /* Alert Styles */
+            .usa-alert {
+              background-color: #f3f3f4;
+              border-left: 0.25rem solid #a6aaad;
+              padding: 16px;
+              position: relative;
+            }
+            
+            .usa-alert--info {
+              background-color: #e7f6f8;
+              border-left-color: #00bde3;
+            }
+            
+            .usa-alert__body {
+              padding-left: 24px;
+            }
+            
+            .usa-alert__heading {
+              font-family: "Source Sans Pro", sans-serif;
+              margin-top: 0;
+              margin-bottom: 8px;
+              font-size: 1.17rem;
+              font-weight: 700;
+              color: #323a45;
+            }
+            
+            .usa-alert__text {
+              margin-bottom: 0;
+              margin-top: 0;
+              font-family: "Source Sans Pro", sans-serif;
+            }
+            
+            /* Button Styles */
+            .usa-button {
+              background-color: #0071bc;
+              color: white;
+              border-radius: 5px;
+              border: none;
+              cursor: pointer;
+              font-weight: 700;
+              font-family: "Source Sans Pro", sans-serif;
+              padding: 10px 20px;
+              text-decoration: none;
+              display: inline-block;
+              font-size: 1rem;
+              line-height: 1.5;
+            }
+            
+            .usa-button:hover {
+              background-color: #205493;
+            }
+            
+            /* Initialize VA Custom Elements */
+            va-breadcrumbs {
+              display: block;
+              margin: 1rem 0;
+            }
+            
+            /* Main container for VA content */
+            .va-sandbox {
+              padding: 1rem 0;
             }
           </style>
         </head>
@@ -240,46 +435,122 @@ export default App;
           <div id="error-display"></div>
           
           <script type="text/babel">
-            try {
-              ${processedCode}
+            // Create the VaBreadcrumbs component
+            function VaBreadcrumbs(props) {
+              // Simple breadcrumbs component to mimic the VA component library
+              return React.createElement('va-breadcrumbs', {
+                'breadcrumb-list': JSON.stringify(props.breadcrumbList),
+                'label': props.label || 'Breadcrumb'
+              });
+            }
+            
+            // Create the VaContentSandbox component that mimics the one in your app
+            function VaContentSandbox(props) {
+              const breadcrumbs = props.breadcrumbs || [
+                { href: "/", label: "VA.gov home" },
+                { href: "#", label: "Current page" },
+              ];
               
-              // Find the component to render
-              let ComponentToRender;
-              
-              // Check for default export
-              if (typeof App !== 'undefined') {
-                ComponentToRender = App;
-              } else {
-                // Look for any exported component
-                const moduleExports = Object.keys(window).filter(key => 
-                  key.match(/^[A-Z]/) && typeof window[key] === 'function'
-                );
-                
-                if (moduleExports.length > 0) {
-                  ComponentToRender = window[moduleExports[0]];
+              return (
+                <div className="va-sandbox" style={{ minHeight: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+                  <div className="vads-l-grid-container">
+                    <div className="vads-l-row">
+                      <div className="vads-l-col">
+                        <VaBreadcrumbs breadcrumbList={breadcrumbs} label="Breadcrumb" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="vads-l-grid-container" style={{ flex: "1" }}>
+                    <div className="vads-l-row">
+                      <div className="vads-l-col--12 medium-screen:vads-l-col--8">
+                        {props.title && <h1 className="vads-u-font-size--h1 vads-u-margin-bottom--2">{props.title}</h1>}
+                        {props.children}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            
+            // Initialize VA components
+            function initVAComponents() {
+              if (typeof customElements !== 'undefined' && customElements.get) {
+                if (!customElements.get('va-breadcrumbs')) {
+                  console.log('VA components initializing...');
                 }
               }
-              
-              if (ComponentToRender) {
-                ReactDOM.createRoot(document.getElementById('root')).render(
-                  <React.StrictMode>
-                    <ComponentToRender />
-                  </React.StrictMode>
-                );
-              } else {
-                throw new Error("No React component found to render");
-              }
-            } catch (error) {
-              console.error("Rendering error:", error);
-              const errorDisplay = document.getElementById('error-display');
-              errorDisplay.style.display = 'block';
-              errorDisplay.innerHTML = '<h2>Error rendering component</h2><pre>' + error.toString() + '</pre>';
             }
+            
+            initVAComponents();
+            
+            // The actual code to render
+            ${processedCode}
+            
+            // Render the content inside a VaContentSandbox
+            function renderContent() {
+              try {
+                const container = document.getElementById('root');
+                
+                // Add styles to the container
+                if (container) {
+                  container.style.height = '100%';
+                  container.style.minHeight = '600px';
+                  container.style.display = 'flex';
+                  container.style.flexDirection = 'column';
+                }
+                
+                // First check for a custom component in the code
+                if (typeof App !== 'undefined') {
+                  ReactDOM.createRoot(container).render(
+                    <div style={{ height: '100%', minHeight: '600px', display: 'flex', flexDirection: 'column' }}>
+                      <App />
+                    </div>
+                  );
+                } else if (typeof SingleColumnLayout !== 'undefined') {
+                  ReactDOM.createRoot(container).render(
+                    <div style={{ height: '100%', minHeight: '600px', display: 'flex', flexDirection: 'column' }}>
+                      <SingleColumnLayout />
+                    </div>
+                  );
+                } else if (typeof default_1 !== 'undefined') {
+                  ReactDOM.createRoot(container).render(
+                    <div style={{ height: '100%', minHeight: '600px', display: 'flex', flexDirection: 'column' }}>
+                      <default_1 />
+                    </div>
+                  );
+                } else {
+                  // If no component found, wrap the content in a VaContentSandbox
+                  const directContent = (
+                    <VaContentSandbox title="VA Prototype">
+                      <div dangerouslySetInnerHTML={{ __html: \`${code.replace(/`/g, '\\`')}\` }} />
+                    </VaContentSandbox>
+                  );
+                  ReactDOM.createRoot(container).render(directContent);
+                }
+              } catch (error) {
+                console.error("Rendering error:", error);
+                document.getElementById('error-display').style.display = 'block';
+                document.getElementById('error-display').innerHTML = 
+                  '<h2>Error rendering component</h2><pre>' + error.toString() + '</pre>';
+              }
+            }
+            
+            // Render with a delay to ensure components are registered
+            setTimeout(renderContent, 250);
           </script>
         </body>
       </html>
-    `
+    `;
   }
+
+  // Force refresh when switching to preview tab
+  useEffect(() => {
+    if (activeTab === "preview") {
+      // Force iframe refresh when switching to preview tab
+      setIframeKey((prev) => prev + 1)
+    }
+  }, [activeTab])
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -289,12 +560,19 @@ export default App;
         {/* Chat Section - 40% width */}
         <div className="w-2/5 flex flex-col border-r">
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {displayMessages.map((message) => (
+            {displayMessages.map((message, index) => (
               <div
-                key={message.id}
+                key={message.id || `message-${index}`}
                 className={`p-4 rounded-lg ${message.role === "user" ? "bg-blue-100" : "bg-gray-100"}`}
               >
-                <div className="whitespace-pre-wrap break-words">{message.content}</div>
+                <div className="whitespace-pre-wrap break-words">
+                  {typeof message.content === 'string' 
+                    ? message.content 
+                    : typeof message.content === 'object' && message.content !== null 
+                      ? JSON.stringify(message.content) 
+                      : String(message.content)
+                  }
+                </div>
               </div>
             ))}
             {isLoading && (
@@ -393,17 +671,79 @@ export default App;
           {/* Content Area */}
           <div className="flex-1">
             {activeTab === "preview" && (
-              <div className="bg-gray-100 flex-1 p-4">
-                <div className="bg-white border rounded-md shadow-sm max-w-6xl mx-auto h-full">
+              <div className="bg-gray-100 flex-1 p-4 h-full" style={{ height: 'calc(100vh - 180px)', minHeight: '600px' }}>
+                <div className="bg-white border rounded-md shadow-sm max-w-6xl mx-auto h-full" style={{ height: '100%' }}>
                   {code ? (
                     <iframe
                       key={iframeKey} // Add key to force refresh
                       srcDoc={createHtmlContent()}
-                      className="w-full h-full min-h-[600px] border-0"
-                      title="Preview"
-                      sandbox="allow-scripts"
+                      className="w-full border-0 bg-white"
+                      style={{ 
+                        height: '100%',
+                        width: '100%',
+                        display: 'block'
+                      }} 
+                      title="VA Prototype Preview"
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"
+                      loading="eager"
+                      referrerPolicy="origin"
                       onLoad={() => {
                         console.log("iframe loaded")
+                        try {
+                          const iframe = document.querySelector('iframe');
+                          if (iframe) {
+                            // Set precise dimensions to match the container
+                            iframe.style.height = '100%';
+                            iframe.style.width = '100%';
+                            iframe.style.display = 'block';
+                            
+                            // Try to access iframe content directly to apply styles
+                            try {
+                              const iframeDocument = iframe.contentDocument || iframe.contentWindow?.document;
+                              if (iframeDocument) {
+                                // Ensure proper body styling
+                                iframeDocument.body.style.margin = '0';
+                                iframeDocument.body.style.padding = '0';
+                                iframeDocument.body.style.backgroundColor = 'white';
+                                iframeDocument.body.style.height = '100%';
+                                
+                                // Add specific VA classes to match the single layout page
+                                iframeDocument.body.classList.add('vads-u-font-family--sans');
+                                
+                                // Ensure root container takes full height
+                                const rootEl = iframeDocument.getElementById('root');
+                                if (rootEl instanceof HTMLElement) {
+                                  rootEl.style.height = '100%';
+                                  rootEl.style.minHeight = '600px';
+                                }
+                                
+                                // Force styles for containers if needed
+                                const containers = iframeDocument.querySelectorAll('.vads-l-grid-container');
+                                if (containers.length) {
+                                  Array.from(containers).forEach((container: Element) => {
+                                    if (container instanceof HTMLElement) {
+                                      container.style.maxWidth = '1440px';
+                                      container.style.marginLeft = 'auto';
+                                      container.style.marginRight = 'auto';
+                                      container.style.paddingLeft = '1rem';
+                                      container.style.paddingRight = '1rem';
+                                    }
+                                  });
+                                }
+                              }
+                            } catch (domError) {
+                              console.warn("Could not access iframe DOM:", domError);
+                            }
+                          }
+                        } catch (e) {
+                          console.error("Error after iframe load:", e);
+                        }
+                      }}
+                      onError={(e) => {
+                        console.error("Iframe error:", e);
+                        setTimeout(() => {
+                          setIframeKey((prev) => prev + 1);
+                        }, 1000);
                       }}
                     />
                   ) : (
