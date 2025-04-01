@@ -595,7 +595,7 @@ export default App;
                 ref={textareaRef}
                 value={input}
                 onChange={handleInputChange}
-                placeholder="Ask v0 to build something..."
+                placeholder="Ask VA agent to build something..."
                 className="w-full border rounded-md py-3 px-4 pr-10 resize-none min-h-[50px] overflow-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={1}
                 disabled={isLoading}
@@ -748,7 +748,7 @@ export default App;
                     />
                   ) : (
                     <div className="flex items-center justify-center h-[600px] text-gray-500">
-                      No preview available yet. Ask v0 to build something!
+                      No preview available yet. Ask VA agent to build something!
                     </div>
                   )}
                 </div>

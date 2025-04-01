@@ -88,7 +88,7 @@ export function ChatInterface() {
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={isApiKeySet ? "Ask v0 to build something..." : "Please set up your API key first"}
+              placeholder={isApiKeySet ? "Ask VA agent to build something..." : "Please set up your API key first"}
               className="w-full border rounded-md py-3 px-4 pr-10 resize-none min-h-[50px] overflow-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               rows={1}
               disabled={!isApiKeySet || isLoading || isCheckingApiKey}
