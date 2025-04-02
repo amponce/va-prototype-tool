@@ -6,7 +6,7 @@ import { useChat } from "ai/react"
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Send, PaperclipIcon, Code, Eye, Save, Undo } from "lucide-react"
-import { getLatestAppState, type ExtendedMessage, type AppState, getLargePromptAPI } from "@/lib/chat-store"
+import { getLatestAppState, type ExtendedMessage, type AppState } from "@/lib/chat-store"
 import { VAHeader } from "@/components/va-specific/va-header"
 import { VAFooter } from "@/components/va-specific/va-footer"
 import { ImprovedCodeEditor } from "@/components/editors/improved-code-editor"
@@ -22,14 +22,14 @@ interface ChatProps {
   id: string
   initialMessages?: ExtendedMessage[]
   initialPrompt?: string
-  useStoredPrompt?: boolean
+  promptId?: string
 }
 
-export default function Chat({ id, initialMessages = [], initialPrompt, useStoredPrompt = false }: ChatProps) {
+export default function Chat({ id, initialMessages = [], initialPrompt, promptId }: ChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const initialPromptSentRef = useRef(false)
-  const storedPromptFetchedRef = useRef(false)
+  const promptRetrievalAttemptedRef = useRef(false)
   const [activeTab, setActiveTab] = useState<"preview" | "code">("preview")
   const [hasChanges, setHasChanges] = useState(false)
   const [originalCode, setOriginalCode] = useState("")
@@ -162,34 +162,6 @@ export default function Chat({ id, initialMessages = [], initialPrompt, useStore
 
     setDisplayMessages(newDisplayMessages)
   }, [messages])
-
-  // Check for large prompts in API storage
-  useEffect(() => {
-    // Only run on client-side and if we need to fetch a stored prompt
-    if (typeof window === 'undefined' || !useStoredPrompt || storedPromptFetchedRef.current) return;
-    
-    const fetchStoredPrompt = async () => {
-      try {
-        storedPromptFetchedRef.current = true;
-        
-        // Try to get the prompt from the API
-        const prompt = await getLargePromptAPI(id);
-        if (!prompt) return;
-        
-        // Set the stored prompt as the initial prompt
-        initialPromptSentRef.current = false; // Reset so we'll send this prompt
-        append({
-          id: generateUniqueId(),
-          content: prompt,
-          role: "user",
-        });
-      } catch (error) {
-        console.error("Error fetching stored prompt:", error);
-      }
-    };
-    
-    fetchStoredPrompt();
-  }, [id, useStoredPrompt, append]);
   
   // Handle the initial prompt if provided
   useEffect(() => {
@@ -201,7 +173,72 @@ export default function Chat({ id, initialMessages = [], initialPrompt, useStore
         role: "user",
       })
     }
-  }, [initialPrompt, isLoading])
+  }, [initialPrompt, isLoading, append])
+  
+  // Fetch promptId from localStorage or sessionStorage if provided
+  useEffect(() => {
+    // Only run on client-side and if we haven't already sent or attempted to retrieve the prompt
+    if (typeof window === 'undefined' || !promptId || initialPromptSentRef.current || promptRetrievalAttemptedRef.current) return;
+    
+    // Mark that we've attempted to retrieve the prompt
+    promptRetrievalAttemptedRef.current = true;
+    
+    try {
+      console.log(`Attempting to retrieve prompt with ID: ${promptId}`);
+      
+      // Check various storage options
+      const storageOptions = [
+        { type: 'localStorage with prefix', getItem: () => localStorage.getItem(`va_prompt_${promptId}`) },
+        { type: 'sessionStorage with prefix', getItem: () => sessionStorage.getItem(`va_prompt_${promptId}`) },
+        { type: 'localStorage direct', getItem: () => localStorage.getItem(promptId) },
+        { type: 'sessionStorage direct', getItem: () => sessionStorage.getItem(promptId) }
+      ];
+      
+      // Try each storage option
+      for (const option of storageOptions) {
+        try {
+          const storedPromptJSON = option.getItem();
+          
+          if (storedPromptJSON) {
+            console.log(`Found prompt in ${option.type}`);
+            const storedPrompt = JSON.parse(storedPromptJSON);
+            
+            // Check if prompt has expired
+            const now = Date.now();
+            if (storedPrompt.expires && now > storedPrompt.expires) {
+              console.log(`Prompt in ${option.type} has expired`);
+              continue; // Try next storage option
+            }
+            
+            // Use the prompt
+            initialPromptSentRef.current = true;
+            append({
+              id: generateUniqueId(),
+              content: storedPrompt.prompt,
+              role: "user",
+            });
+            
+            // Clean up all storage options
+            try { localStorage.removeItem(`va_prompt_${promptId}`); } catch (e) {}
+            try { sessionStorage.removeItem(`va_prompt_${promptId}`); } catch (e) {}
+            try { localStorage.removeItem(promptId); } catch (e) {}
+            try { sessionStorage.removeItem(promptId); } catch (e) {}
+            
+            console.log(`Successfully used prompt from ${option.type}`);
+            return; // Exit the function after successfully using a prompt
+          }
+        } catch (error) {
+          console.error(`Error with ${option.type}:`, error);
+        }
+      }
+      
+      // If we reach here, no valid prompt was found
+      console.log(`No stored prompt found for ID: ${promptId}`);
+      
+    } catch (error) {
+      console.error('Error retrieving prompt:', error);
+    }
+  }, [promptId, append]);
 
   // Auto-resize textarea
   useEffect(() => {

@@ -3,7 +3,7 @@ import { loadChat } from "@/lib/storage"
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { id } = params
+    const { id } = await Promise.resolve(params)
 
     if (!id) {
       return NextResponse.json({ error: "Chat ID is required" }, { status: 400 })

@@ -29,7 +29,10 @@ export default function RootLayout({
           referrerPolicy="no-referrer"
         />
       </head>
-      <body className={`${inter.className} bg-gray-50 min-h-screen flex flex-col`}>
+      <body 
+        className={`${inter.className} bg-gray-50 min-h-screen flex flex-col`}
+        suppressHydrationWarning
+      >
         <VAComponentsProvider>{children}</VAComponentsProvider>
       </body>
     </html>

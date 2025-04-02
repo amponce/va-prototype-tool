@@ -3,7 +3,7 @@ import { saveChat } from "@/lib/storage"
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { id } = params
+    const { id } = await Promise.resolve(params)
     const { messages } = await request.json()
 
     if (!id) {

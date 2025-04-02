@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Send, Maximize, PaperclipIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { createChat, storeLargePromptAPI } from "@/lib/chat-store"
+import { createChat } from "@/lib/chat-store"
 
 export function ChatInterface() {
   const [input, setInput] = useState("")
@@ -69,12 +69,54 @@ export function ChatInterface() {
     try {
       // Create a new chat
       const chatId = await createChat()
+      console.log(`Created new chat with ID: ${chatId}`);
 
-      // For large prompts, store via API instead of the URL
-      if (input.length > 1000) {
-        await storeLargePromptAPI(chatId, input)
-        router.push(`/chat/${chatId}?useStoredPrompt=true`)
+      // For large prompts, store directly in localStorage instead of server
+      const MAX_URL_PROMPT_LENGTH = 500 // Conservative limit for URL params
+      
+      if (input.length > MAX_URL_PROMPT_LENGTH) {
+        // Generate a unique ID for the prompt
+        const promptId = Date.now().toString(36) + Math.random().toString(36).substring(2)
+        
+        // Store prompt data
+        const promptData = {
+          prompt: input,
+          timestamp: Date.now(),
+          expires: Date.now() + (5 * 60 * 1000) // 5 minutes from now
+        };
+        
+        let localStorageSuccess = false;
+        let sessionStorageSuccess = false;
+        
+        // Store in both localStorage and sessionStorage for redundancy
+        try {
+          localStorage.setItem(`va_prompt_${promptId}`, JSON.stringify(promptData));
+          localStorageSuccess = true;
+        } catch (e) {
+          console.error("Failed to store in localStorage:", e);
+        }
+        
+        try {
+          // Also store in sessionStorage as a backup
+          sessionStorage.setItem(`va_prompt_${promptId}`, JSON.stringify(promptData));
+          sessionStorageSuccess = true;
+        } catch (e) {
+          console.error("Failed to store in sessionStorage:", e);
+        }
+        
+        // Add a debug message to console
+        console.log(`Stored prompt with ID: ${promptId}`, {
+          keyUsed: `va_prompt_${promptId}`,
+          promptLength: input.length,
+          localStorageSuccess,
+          sessionStorageSuccess,
+          navigatingTo: `/chat/${chatId}?promptId=${promptId}`
+        });
+        
+        // Navigate to chat with prompt ID reference only
+        router.push(`/chat/${chatId}?promptId=${promptId}`)
       } else {
+        console.log(`Using URL parameter for smaller prompt (${input.length} chars)`);
         // Use URL parameter for smaller prompts
         router.push(`/chat/${chatId}?message=${encodeURIComponent(input)}`)
       }

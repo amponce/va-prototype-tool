@@ -6,12 +6,12 @@ export default async function Page({
   searchParams,
 }: {
   params: { id: string }
-  searchParams: { message?: string, useStoredPrompt?: string }
+  searchParams: { message?: string, promptId?: string }
 }) {
   const { id } = params
   const initialMessage = searchParams.message
-  const useStoredPrompt = searchParams.useStoredPrompt === "true"
-
+  const promptId = searchParams.promptId
+  
   try {
     // Load existing messages
     const messages = await loadChat(id)
@@ -28,7 +28,7 @@ export default async function Page({
         id={id}
         initialMessages={extendedMessages}
         initialPrompt={initialMessage ? decodeURIComponent(initialMessage) : undefined}
-        useStoredPrompt={useStoredPrompt}
+        promptId={promptId}
       />
     )
   } catch (error) {
