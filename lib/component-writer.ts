@@ -1,18 +1,39 @@
-import fs from 'fs'
+import { promises as fs } from 'fs'
+import { existsSync, statSync } from 'fs'
 import path from 'path'
 import crypto from 'crypto'
 import { mkdirSync } from 'fs'
 
 // Directory for temporary components
-const TEMP_DIR = path.join(process.cwd(), 'temp-components')
+const TEMP_COMPONENTS_DIR = path.join(process.cwd(), 'temp-components')
 
 // Ensure temp directory exists
-try {
-  if (!fs.existsSync(TEMP_DIR)) {
-    mkdirSync(TEMP_DIR, { recursive: true })
+if (!existsSync(TEMP_COMPONENTS_DIR)) {
+  fs.mkdir(TEMP_COMPONENTS_DIR, { recursive: true })
+    .catch(error => console.error('Error creating temp directory:', error))
+}
+
+/**
+ * Creates a temporary component file and returns its ID
+ */
+export async function createTempComponent(code: string): Promise<string> {
+  try {
+    // Generate a unique ID for the component
+    const componentId = crypto
+      .createHash('md5')
+      .update(code)
+      .digest('hex')
+
+    const filePath = path.join(TEMP_COMPONENTS_DIR, `${componentId}.tsx`)
+
+    // Write the component file
+    await fs.writeFile(filePath, code, 'utf-8')
+
+    return componentId
+  } catch (error) {
+    console.error('Error creating temporary component:', error)
+    throw new Error('Failed to create temporary component')
   }
-} catch (error) {
-  console.error('Error creating temp directory:', error)
 }
 
 /**
@@ -28,10 +49,10 @@ export async function writeComponentToFile(code: string): Promise<string> {
   const enhancedCode = prepareComponentCode(code, componentId)
   
   // Write the component to file
-  const filePath = path.join(TEMP_DIR, `${componentId}.tsx`)
+  const filePath = path.join(TEMP_COMPONENTS_DIR, `${componentId}.tsx`)
   
   try {
-    await fs.promises.writeFile(filePath, enhancedCode)
+    await fs.writeFile(filePath, enhancedCode)
     return componentId
   } catch (error) {
     console.error('Error writing component file:', error)
@@ -225,30 +246,28 @@ function getComponentName(code: string): string {
 }
 
 /**
- * Clean up temporary component files
- * @param keepLast Number of recent files to keep (default 10)
+ * Cleanup old component files, keeping only the most recent ones
  */
 export async function cleanupComponentFiles(keepLast: number = 10): Promise<void> {
   try {
-    const files = await fs.promises.readdir(TEMP_DIR)
+    const files = await fs.readdir(TEMP_COMPONENTS_DIR)
     
     // Skip if there are fewer files than the keepLast value
     if (files.length <= keepLast) return
     
-    // Sort files by creation time (oldest first)
+    // Get file stats and sort by creation time
     const filePaths = files
-      .filter(file => file.endsWith('.tsx'))
-      .map(file => {
-        const filePath = path.join(TEMP_DIR, file)
-        const stats = fs.statSync(filePath)
-        return { path: filePath, ctime: stats.ctime }
-      })
-      .sort((a, b) => a.ctime.getTime() - b.ctime.getTime())
+      .map(file => ({
+        name: file,
+        path: path.join(TEMP_COMPONENTS_DIR, file),
+        created: statSync(path.join(TEMP_COMPONENTS_DIR, file)).birthtime
+      }))
+      .sort((a, b) => a.created.getTime() - b.created.getTime())
     
     // Delete older files
     const filesToDelete = filePaths.slice(0, filePaths.length - keepLast)
     for (const file of filesToDelete) {
-      await fs.promises.unlink(file.path)
+      await fs.unlink(file.path)
     }
   } catch (error) {
     console.error('Error cleaning up component files:', error)

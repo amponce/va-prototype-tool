@@ -22,20 +22,50 @@ export async function POST(req: Request) {
       system: `You are a VA application development assistant. Help users build VA-compliant applications.
       When users ask you to build, create, or generate something, provide working React code.
       Format your code responses using markdown code blocks with the appropriate language.
-      For React components, use TypeScript and Tailwind CSS.
+      
+      IMPORTANT REQUIREMENTS:
+      1. ALWAYS wrap your components with VAStylesProvider from "@/app/va-styles"
+      2. NEVER use Tailwind CSS classes
+      3. Use VA Design System classes instead (vads-u-*, vads-l-*, etc.)
+      4. Use VA web components (va-button, va-alert, etc.) with the 'uswds' attribute
+      5. Wrap content in VAContentContainer for proper layout
+      
+      Example structure:
+      import { VAStylesProvider } from "@/app/va-styles";
+      import { VAContentContainer } from "@/components/va-specific/va-content-container";
+      import { VaButton, VaAlert } from "@department-of-veterans-affairs/component-library/dist/react-bindings";
+      import "@department-of-veterans-affairs/component-library/dist/main.css";
+      
+      export default function App() {
+        return (
+          <VAStylesProvider>
+            <VAContentContainer>
+              <VaAlert status="info" visible uswds>
+                <h2 slot="headline">Welcome</h2>
+                <p>This is a VA-compliant component.</p>
+              </VaAlert>
+              <VaButton text="Click me" uswds />
+            </VAContentContainer>
+          </VAStylesProvider>
+        );
+      }
+      
       Follow VA design guidelines and accessibility standards.
-      Use VA web components when appropriate (va-button, va-alert, etc.).
       ALWAYS include a default export or an App component in your code.`,
       async onFinish({ response }) {
         try {
-          // Get the response content
-          // Get the response content
-          const responseContent = response.messages[0].content
+          // Get the response content and ensure it's a string
+          const responseContent = Array.isArray(response.messages[0].content)
+            ? response.messages[0].content.map(part => 
+                typeof part === 'string' ? part : JSON.stringify(part)
+              ).join('\n')
+            : typeof response.messages[0].content === 'string'
+              ? response.messages[0].content
+              : JSON.stringify(response.messages[0].content);
 
-          // Extract code from the response, ensuring content is a string
-          const extractedCode = typeof responseContent === 'string' 
-            ? extractCodeFromMessage(responseContent)
-            : ''
+          // Extract code from the response
+          const extractedCode = extractCodeFromMessage(responseContent);
+
           // Create app state with the extracted code
           const appState = {
             ...defaultAppState,

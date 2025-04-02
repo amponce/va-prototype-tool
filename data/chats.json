@@ -484,5 +484,64 @@
         }
       }
     }
+  ],
+  "9031a1f9-2d02-4110-9376-a774c8ec5c32": [],
+  "m8zdcb4qtcgp0cluc8b": [
+    {
+      "role": "user",
+      "content": "Generate a  standard single column landing page ",
+      "parts": [
+        {
+          "type": "text",
+          "text": "Generate a  standard single column landing page "
+        }
+      ]
+    },
+    {
+      "id": "msg-boXaWnJvMD6X5FAKrcnAx0WE",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Here's a simple example of a VA-compliant single column landing page using React:\n\n```jsx\nimport { VAStylesProvider } from \"@/app/va-styles\";\nimport { VAContentContainer } from \"@/components/va-specific/va-content-container\";\nimport { VaButton, VaAlert } from \"@department-of-veterans-affairs/component-library/dist/react-bindings\";\n\nexport default function LandingPage() {\n  return (\n    <VAStylesProvider>\n      <VAContentContainer>\n        <VaAlert status=\"info\" visible uswds>\n          <h2 slot=\"headline\">Welcome to Our Service</h2>\n          <p>We are committed to providing the best service for our veterans.</p>\n        </VaAlert>\n        <div className=\"vads-u-margin-y--4\">\n          <h1 className=\"vads-u-font-size--h2\">Our Mission</h1>\n          <p className=\"vads-u-font-size--base\">\n            Our mission is to ensure that veterans receive the care and support they deserve.\n          </p>\n        </div>\n        <div className=\"vads-u-margin-y--4\">\n          <h2 className=\"vads-u-font-size--h3\">Get Started</h2>\n          <p className=\"vads-u-font-size--base\">\n            Click the button below to learn more about our services and how we can assist you.\n          </p>\n          <VaButton text=\"Learn More\" uswds />\n        </div>\n      </VAContentContainer>\n    </VAStylesProvider>\n  );\n}\n```\n\nThis code sets up a basic landing page with a welcome alert, a mission statement, and a call-to-action button. The layout is structured using VA design system classes to ensure compliance with VA standards."
+        }
+      ],
+      "appState": {
+        "code": "import { VAStylesProvider } from \"@/app/va-styles\";\nimport { VAContentContainer } from \"@/components/va-specific/va-content-container\";\nimport { VaButton, VaAlert } from \"@department-of-veterans-affairs/component-library/dist/react-bindings\";\nimport \"@department-of-veterans-affairs/component-library/dist/main.css\";\nexport default function LandingPage() {\n  return (\n    <VAStylesProvider>\n      <VAContentContainer>\n        <VaAlert status=\"info\" visible uswds>\n          <h2 slot=\"headline\">Welcome to Our Service</h2>\n          <p>We are committed to providing the best service for our veterans.</p>\n        </VaAlert>\n        <div className=\"vads-u-margin-y--4\">\n          <h1 className=\"vads-u-font-size--h2\">Our Mission</h1>\n          <p className=\"vads-u-font-size--base\">\n            Our mission is to ensure that veterans receive the care and support they deserve.\n          </p>\n        </div>\n        <div className=\"vads-u-margin-y--4\">\n          <h2 className=\"vads-u-font-size--h3\">Get Started</h2>\n          <p className=\"vads-u-font-size--base\">\n            Click the button below to learn more about our services and how we can assist you.\n          </p>\n          <VaButton text=\"Learn More\" uswds />\n        </div>\n      </VAContentContainer>\n    </VAStylesProvider>\n  );\n}",
+        "previewVisible": false,
+        "previewMode": "desktop",
+        "activeFile": "App.tsx",
+        "files": {
+          "App.tsx": "import React from 'react';\n\nexport default function App() {\n  return (\n    <div className=\"flex items-center justify-center min-h-screen bg-gray-100\">\n      <div className=\"bg-white p-8 rounded-lg shadow-md max-w-md w-full\">\n        <h1 className=\"text-2xl font-bold mb-4 text-center\">Welcome to VA Rapid Prototyping</h1>\n        <p className=\"text-gray-600 mb-6 text-center\">\n          Start by describing what you want to build in the chat.\n        </p>\n      </div>\n    </div>\n  );\n}"
+        }
+      }
+    }
+  ],
+  "48b68208-c40b-4c09-a47c-c3f037139072": [],
+  "m8zdiktetl9wunwbn28": [
+    {
+      "role": "user",
+      "content": "Build a landing page",
+      "parts": [
+        {
+          "type": "text",
+          "text": "Build a landing page"
+        }
+      ]
+    },
+    {
+      "id": "msg-CTBWWsKoxjTYEL1ohBkwQ2Xl",
+      "role": "assistant",
+      "content": "{\"type\":\"text\",\"text\":\"To create a VA-compliant landing page using React, you can follow the structure below. This example includes a header, a welcome alert, and a button to get started.\\n\\n```jsx\\nimport React from \\\"react\\\";\\nimport { VAStylesProvider } from \\\"@/app/va-styles\\\";\\nimport { VAContentContainer } from \\\"@/components/va-specific/va-content-container\\\";\\nimport { VaButton, VaAlert } from \\\"@department-of-veterans-affairs/component-library/dist/react-bindings\\\";\\nimport \\\"@department-of-veterans-affairs/component-library/dist/main.css\\\";\\n\\nexport default function LandingPage() {\\n  return (\\n    <VAStylesProvider>\\n      <VAContentContainer>\\n        <header className=\\\"vads-u-padding--2 vads-u-background-color--primary-darkest vads-u-color--white\\\">\\n          <h1>Welcome to the VA Landing Page</h1>\\n        </header>\\n        <main className=\\\"vads-u-padding--2\\\">\\n          <VaAlert status=\\\"info\\\" visible uswds>\\n            <h2 slot=\\\"headline\\\">Welcome to Our Service</h2>\\n            <p>We are committed to providing the best service for our veterans.</p>\\n          </VaAlert>\\n          <div className=\\\"vads-u-margin-top--2\\\">\\n            <VaButton text=\\\"Get Started\\\" uswds />\\n          </div>\\n        </main>\\n      </VAContentContainer>\\n    </VAStylesProvider>\\n  );\\n}\\n```\\n\\nThis code sets up a simple landing page with a header, an informational alert, and a button. The components are styled using VA Design System classes to ensure compliance with VA standards.\"}",
+      "appState": {
+        "code": "import React from \"react\";\nimport { VAStylesProvider } from \"@/app/va-styles\";\nimport { VAContentContainer } from \"@/components/va-specific/va-content-container\";\nimport { VaButton, VaAlert } from \"@department-of-veterans-affairs/component-library/dist/react-bindings\";\nimport \"@department-of-veterans-affairs/component-library/dist/main.css\";\n\nexport default function LandingPage() {\n  return (\n    <VAStylesProvider>\n      <VAContentContainer>\n        <header className=\"vads-u-padding--2 vads-u-background-color--primary-darkest vads-u-color--white\">\n          <h1>Welcome to the VA Landing Page</h1>\n        </header>\n        <main className=\"vads-u-padding--2\">\n          <VaAlert status=\"info\" visible uswds>\n            <h2 slot=\"headline\">Welcome to Our Service</h2>\n            <p>We are committed to providing the best service for our veterans.</p>\n          </VaAlert>\n          <div className=\"vads-u-margin-top--2\">\n            <VaButton text=\"Get Started\" uswds />\n          </div>\n        </main>\n      </VAContentContainer>\n    </VAStylesProvider>\n  );\n}",
+        "previewVisible": false,
+        "previewMode": "desktop",
+        "activeFile": "App.tsx",
+        "files": {
+          "App.tsx": "import React from 'react';\n\nexport default function App() {\n  return (\n    <div className=\"flex items-center justify-center min-h-screen bg-gray-100\">\n      <div className=\"bg-white p-8 rounded-lg shadow-md max-w-md w-full\">\n        <h1 className=\"text-2xl font-bold mb-4 text-center\">Welcome to VA Rapid Prototyping</h1>\n        <p className=\"text-gray-600 mb-6 text-center\">\n          Start by describing what you want to build in the chat.\n        </p>\n      </div>\n    </div>\n  );\n}"
+        }
+      }
+    }
   ]
 }

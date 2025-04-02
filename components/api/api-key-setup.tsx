@@ -10,20 +10,20 @@ import { VaAlert, VaButton, VaTextInput } from "@department-of-veterans-affairs/
 declare global {
   namespace JSX {
     interface IntrinsicElements {
-      'va-alert': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
+      'VaAlert': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
         status?: string;
         visible?: boolean;
         uswds?: boolean;
         headline?: string;
       }, HTMLElement>;
-      'va-text-input': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
+      'VaTextInput': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
         label?: string;
         name?: string;
         value?: string;
         onInput?: (event: any) => void; // Use a more specific type if available
         uswds?: boolean;
       }, HTMLElement>;
-      'va-button': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
+      'VaButton': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
         text?: string;
         onClick?: (event: any) => void; // Use a more specific type if available
         disabled?: boolean;

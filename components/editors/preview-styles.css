@@ -31,4 +31,36 @@ iframe {
   isolation: isolate;
   contain: strict;
   background-color: white;
+}
+
+.va-preview-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: auto;
+  padding: 1rem;
+  background-color: white;
+}
+
+.code-display {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.code-display pre {
+  max-height: 300px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.code-display h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 700;
 } 

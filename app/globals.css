@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+
+
+
 /* Simple fix for breadcrumb links */
 .bg-gray-100 a.text-blue-600 {
   color: #2563eb !important;

@@ -310,15 +310,9 @@ function App() {
           <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
           
           <!-- VA Components -->
-          <script src="https://unpkg.com/@department-of-veterans-affairs/web-components/dist/va-components.js"></script>
-          <link rel="stylesheet" href="https://unpkg.com/@department-of-veterans-affairs/formation/dist/formation.min.css">
-          <link rel="stylesheet" href="https://unpkg.com/@department-of-veterans-affairs/component-library/dist/main.css">
-          
-          <!-- Tailwind CSS -->
-          <script src="https://cdn.tailwindcss.com"></script>
-          
-          <!-- Font Awesome -->
-          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+          <script src="https://unpkg.com/@department-of-veterans-affairs/component-library/dist/component-library.js"></script>
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@department-of-veterans-affairs/formation/dist/formation.min.css">
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@department-of-veterans-affairs/css-library/dist/stylesheets/utilities.css">
           
           <style>
             html, body { 
@@ -353,52 +347,15 @@ function App() {
             /* VA components styling */
             va-button, va-alert, va-accordion, va-breadcrumbs {
               display: block;
+              margin: 1rem 0;
             }
             
-            /* VA Design System Utility Classes */
-            .vads-u-margin-bottom--2 { margin-bottom: 16px !important; }
-            .vads-u-margin-bottom--4 { margin-bottom: 32px !important; }
-            .vads-u-margin-top--2 { margin-top: 16px !important; }
-            .vads-u-margin-top--4 { margin-top: 32px !important; }
-            .vads-u-font-size--h1 { font-size: 2.5rem !important; font-weight: 700 !important; }
-            .vads-u-font-size--h2 { font-size: 1.93rem !important; font-weight: 700 !important; }
+            /* Additional VA utility classes */
+            .vads-u-padding--2 { padding: 1rem !important; }
+            .vads-u-background-color--primary-darkest { background-color: #112e51 !important; }
+            .vads-u-color--white { color: white !important; }
             
-            .vads-l-grid-container {
-              max-width: 1440px;
-              margin-left: auto;
-              margin-right: auto;
-              padding-left: 1rem;
-              padding-right: 1rem;
-            }
-            
-            .vads-l-row {
-              display: flex;
-              flex-wrap: wrap;
-              margin-left: -1rem;
-              margin-right: -1rem;
-            }
-            
-            .vads-l-col {
-              flex: 0 0 100%;
-              padding-left: 1rem;
-              padding-right: 1rem;
-            }
-            
-            .vads-l-col--12 {
-              flex: 0 0 100%;
-              max-width: 100%;
-              padding-left: 1rem;
-              padding-right: 1rem;
-            }
-            
-            .va-introtext {
-              font-family: "Source Sans Pro", sans-serif;
-              font-size: 1.25rem;
-              font-weight: 400;
-              line-height: 1.65;
-              margin-top: 1rem;
-              margin-bottom: 1rem;
-            }
+            /* Existing VA utility classes... */
           </style>
         </head>
         <body>
@@ -406,6 +363,11 @@ function App() {
           <div id="error-display"></div>
           
           <script type="text/babel" data-presets="react,typescript">
+            // Initialize VA components
+            if (window.defineCustomElements) {
+              window.defineCustomElements();
+            }
+            
             // Set up error handling
             window.onerror = function(message, source, lineno, colno, error) {
               console.error("Error in preview:", error);
@@ -421,26 +383,24 @@ function App() {
             // Make React and ReactDOM available globally in the script scope
             const { createElement, useState, useEffect, useRef, useCallback, useMemo } = React;
 
-            // Predefine VA component references so they can be used in the code
-            const VAHeader = (props) => createElement('va-header', props);
-            const VAFooter = (props) => createElement('va-footer', props);
-            const VAButton = (props) => createElement('va-button', props);
-            const VAAlert = (props) => createElement('va-alert', props);
-            const VAAccordion = (props) => createElement('va-accordion', props);
-            const VAAccordionItem = (props) => createElement('va-accordion-item', props);
-            const VATextInput = (props) => createElement('va-text-input', props);
-            const VACheckbox = (props) => createElement('va-checkbox', props);
-            const VARadio = (props) => createElement('va-radio', props);
-            const VASelect = (props) => createElement('va-select', props);
-            const VATextarea = (props) => createElement('va-textarea', props);
-            
-            // VAContentContainer component (commonly used)
+            // Predefine VA component references
+            const VAStylesProvider = ({ children }) => children;
             const VAContentContainer = (props) => {
               return createElement('div', { 
                 className: 'vads-l-grid-container', 
                 ...props 
               });
             };
+            
+            const VaButton = (props) => createElement('va-button', props);
+            const VaAlert = (props) => createElement('va-alert', props);
+            const VaAccordion = (props) => createElement('va-accordion', props);
+            const VaAccordionItem = (props) => createElement('va-accordion-item', props);
+            const VaTextInput = (props) => createElement('va-text-input', props);
+            const VaCheckbox = (props) => createElement('va-checkbox', props);
+            const VaRadio = (props) => createElement('va-radio', props);
+            const VaSelect = (props) => createElement('va-select', props);
+            const VaTextarea = (props) => createElement('va-textarea', props);
 
             try {
               // Debug the processed code to see what we're trying to execute
@@ -603,31 +563,8 @@ function App() {
           {/* Content Area */}
           <div className="flex-1 overflow-y-auto">
             {activeTab === "preview" && (
-              <div className="bg-gray-100 flex-1 p-4 h-full" style={{ 
-                height: 'calc(100vh - 180px)', 
-                minHeight: '600px', 
-                isolation: 'isolate' 
-              }}>
-                <div className="bg-white border rounded-md shadow-sm max-w-6xl mx-auto h-full" style={{ 
-                  height: '100%',
-                  isolation: 'isolate',
-                  contain: 'strict'
-                }}>
-                  {code ? (
-                    <div className="preview-iframe-container" style={{
-                      height: '100%',
-                      width: '100%',
-                      overflow: 'hidden',
-                      isolation: 'isolate'
-                    }}>
-                      <DynamicComponentPreview code={code} />
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-[600px] text-gray-500">
-                      No preview available yet. Ask VA agent to build something!
-                    </div>
-                  )}
-                </div>
+              <div className="flex-1 bg-white">
+                <DynamicComponentPreview code={code} />
               </div>
             )}
 

@@ -21,32 +21,19 @@ import {
   VaCard,
   VaAdditionalInfo
 } from "@department-of-veterans-affairs/component-library/dist/react-bindings"
+import "@department-of-veterans-affairs/component-library/dist/main.css";
+import { VAStylesProvider } from "@/app/va-styles";
 
 export default function VAComponentsShowcasePage() {
   const [activeTab, setActiveTab] = useState("buttons")
 
-  // Ensure web components are loaded
-  useEffect(() => {
-    // This script is already loaded in VAComponentsProvider, but we're adding it here as a safeguard
-    const script = document.createElement("script")
-    script.src = "https://unpkg.com/@department-of-veterans-affairs/component-library@46.2.3/dist/component-library.js"
-    script.async = true
 
-    if (!document.querySelector('script[src*="component-library.js"]')) {
-      document.body.appendChild(script)
-    }
-
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script)
-      }
-    }
-  }, [])
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <VAHeader />
-      <main className="flex-1">
+    <VAStylesProvider>
+      <div className="flex flex-col min-h-screen">
+        <VAHeader />
+        <main className="flex-1">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-6xl mx-auto mt-4">
             <div className="mb-8">
@@ -425,6 +412,7 @@ export default function VAComponentsShowcasePage() {
       </main>
       <VAFooter />
     </div>
+    </VAStylesProvider>
   )
 }
 
