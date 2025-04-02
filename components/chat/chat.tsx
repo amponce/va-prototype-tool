@@ -3,9 +3,9 @@
 import type React from "react"
 
 import { useChat } from "ai/react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Send, PaperclipIcon, Code, Eye, Save, Undo } from "lucide-react"
+import { Send, PaperclipIcon, Code, Eye, Save, Undo, ArrowDown } from "lucide-react"
 import { getLatestAppState, type ExtendedMessage, type AppState } from "@/lib/chat-store"
 import { VAHeader } from "@/components/va-specific/va-header"
 import { VAFooter } from "@/components/va-specific/va-footer"
@@ -30,12 +30,21 @@ export default function Chat({ id, initialMessages = [], initialPrompt, promptId
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const initialPromptSentRef = useRef(false)
   const promptRetrievalAttemptedRef = useRef(false)
-  const [activeTab, setActiveTab] = useState<"preview" | "code">("preview")
+  const [activeTab, setActiveTab] = useState<"preview" | "code">("code")
   const [hasChanges, setHasChanges] = useState(false)
   const [originalCode, setOriginalCode] = useState("")
   const [displayMessages, setDisplayMessages] = useState<ExtendedMessage[]>([])
   const [iframeKey, setIframeKey] = useState(0) // Add key to force iframe refresh
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false) // Track if code is being generated
+  const [justCompletedGeneration, setJustCompletedGeneration] = useState(false) // Track if we just completed a generation
   const scrollContainerRef = useRef<HTMLDivElement>(null) // Ref for the scrollable chat container
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false); // Show suggested prompts
+  const [autoScrollDisabled, setAutoScrollDisabled] = useState(false); // Enable auto-scroll by default for AI messages
+  const [codeAlreadyProcessed, setCodeAlreadyProcessed] = useState(false); // Track if we've already processed code from this message
+  const [apiErrorCount, setApiErrorCount] = useState(0);
+  const maxApiErrors = 3; // Max number of API errors before stopping attempts
+  const previousMessageRef = useRef<string | null>(null);
 
   // Initialize appState from initialMessages
   const [appState, setAppState] = useState<AppState>(() => {
@@ -53,50 +62,99 @@ export default function Chat({ id, initialMessages = [], initialPrompt, promptId
       id,
     },
     onFinish: (message) => {
+      // Skip code processing if there are API errors
+      if (apiErrorCount >= maxApiErrors || error) {
+        console.log("Skipping code processing due to API errors");
+        setIsGeneratingCode(false);
+        return;
+      }
+      
+      // Skip if we're already processing or have processed this message
+      if (codeAlreadyProcessed) {
+        // Reset for next messages
+        setCodeAlreadyProcessed(false);
+        setIsGeneratingCode(false);
+        return;
+      }
+      
       // Handle object content
       const messageContent = typeof message.content === 'string' 
         ? message.content 
         : typeof message.content === 'object' && message.content !== null
           ? JSON.stringify(message.content)
           : String(message.content);
-          
-      // Extract code from the message
-      const extractedCode = extractCodeFromMessage(messageContent)
-
-      if (extractedCode) {
-        // Update code state
-        setCode(extractedCode)
-        setOriginalCode(extractedCode)
-        setHasChanges(false)
-
-        // Update appState
-        const newAppState = {
-          ...appState,
-          code: extractedCode,
-        }
-        setAppState(newAppState)
-
-        // Save to server
-        saveAppState(newAppState)
-
-        // Show code first, then automatically switch to preview after a delay
-        setActiveTab("code")
-        
-        // Force iframe refresh
-        setIframeKey((prev) => prev + 1)
-        
-        // Switch to preview after a short delay to allow the iframe to load
-        setTimeout(() => {
-          // Force another iframe refresh before showing
-          setIframeKey((prev) => prev + 1)
-          setActiveTab("preview")
-          
-          // Add another refresh after showing preview to ensure content is displayed
-          setTimeout(() => {
-            setIframeKey((prev) => prev + 1)
-          }, 300)
-        }, 800)
+      
+      // Check if we've already seen this message content
+      if (previousMessageRef.current === messageContent) {
+        console.log("Skipping duplicate message content");
+        setIsGeneratingCode(false);
+        return;
       }
+      
+      // Store message content to avoid reprocessing
+      previousMessageRef.current = messageContent;
+      
+      // Extract code from the message
+      const extractedCode = extractCodeFromMessage(messageContent);
+
+      if (extractedCode !== null) {
+        try {
+          // Mark that we've processed code from this message
+          setCodeAlreadyProcessed(true);
+          
+          // Update code state
+          setCode(extractedCode);
+          setOriginalCode(extractedCode);
+          setHasChanges(false);
+
+          // Update appState
+          const newAppState = {
+            ...appState,
+            code: extractedCode,
+          };
+          setAppState(newAppState);
+
+          // Save to server
+          saveAppState(newAppState).catch(err => {
+            console.error("Error in saveAppState:", err);
+            // Don't throw here - continue execution even if save fails
+          });
+
+          // Stay in code view and don't automatically switch to preview
+          setActiveTab("code");
+          
+          // Create a unique ID for the summary message to ensure it doesn't get filtered
+          const summaryMessageId = `summary_${Date.now()}`;
+          
+          // Add summary message after code generation
+          const summaryMessage = generateSummary(extractedCode);
+          console.log("Adding summary message:", summaryMessage);
+          
+          // Use timeout to separate the code message from the summary message
+          setTimeout(() => {
+            // Use direct append without error handling to add the summary
+            append({
+              id: summaryMessageId,
+              content: summaryMessage,
+              role: "assistant",
+            });
+            
+            // Show suggestions after code is generated
+            setShowSuggestions(true);
+            
+            // Mark as just completed for scrolling
+            setJustCompletedGeneration(true);
+          }, 1000);
+        } catch (err) {
+          console.error("Error processing code:", err);
+        }
+      } else {
+        // No code was found, but still show suggestions after any assistant response completes
+        setShowSuggestions(true);
+      }
+      
+      // Always mark that we're no longer generating code
+      setIsGeneratingCode(false);
     },
   })
 
@@ -107,61 +165,111 @@ export default function Chat({ id, initialMessages = [], initialPrompt, promptId
     }
   }, [isLoading]);
 
-  // Function to remove code blocks from message content
-  const removeCodeBlocks = (content: any): string => {
+  // Function to remove code blocks from message content - memoized to prevent dependency changes
+  const removeCodeBlocks = useCallback((content: any): string => {
     // Handle non-string content
     if (typeof content !== 'string') {
-      return "I've generated code for you! Check the code panel to view and edit it.";
+      return "I'm generating code based on your request. Please wait a moment...";
     }
     
-    // Remove all code blocks with more aggressive approach
-    let cleaned = content;
+    // Check if this is a generating or completed code message
+    const hasCodeBlock = content.includes("```");
+    const isGenerating = !content.trim().endsWith("```") && hasCodeBlock;
     
-    // Check if the content contains code blocks
-    if (content.includes("```")) {
-      // Replace the entire content with a simpler message
-      return "I've generated code for you! Check the code panel to view and edit it.";
-    }
-    
-    return cleaned;
-  }
-
-  // Save app state to server
-  const saveAppState = async (updatedAppState: AppState) => {
-    try {
-      await fetch(`/api/chat/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          appState: updatedAppState,
-        }),
-      })
-    } catch (error) {
-      console.error("Error saving app state:", error)
-    }
-  }
-
-  // Update displayMessages when messages change
-  useEffect(() => {
-    const newDisplayMessages = messages.map((message) => {
-      // Ensure each message has an id
-      if (!message.id) {
-        message.id = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      }
-      
-      if (message.role === "assistant") {
-        return {
-          ...message,
-          content: removeCodeBlocks(message.content),
+    // Keep the initial message visible before showing the generating message
+    if (hasCodeBlock) {
+      // If the message has other content before the code block, preserve it
+      const textBeforeCodeBlock = content.split("```")[0].trim();
+      if (textBeforeCodeBlock && textBeforeCodeBlock.length > 10) {
+        if (isGenerating) {
+          return textBeforeCodeBlock + "\n\nI'm generating code based on your request. You can watch the progress in the code panel...";
+        } else {
+          return textBeforeCodeBlock + "\n\nI've generated code for you! Check the code panel to view and edit it.";
         }
       }
-      return message
-    })
+      
+      // Default messages if no meaningful text before code block
+      return isGenerating 
+        ? "I'm generating code based on your request. You can watch the progress in the code panel..." 
+        : "I've generated code for you! Check the code panel to view and edit it.";
+    }
+    
+    // If no code blocks, return the original content
+    return content;
+  }, []); // No dependencies means this function won't change
 
-    setDisplayMessages(newDisplayMessages)
-  }, [messages])
+  // Memoized function to format messages for display
+  const formatDisplayMessages = useCallback((messages: ExtendedMessage[]) => {
+    return messages.map((message: ExtendedMessage) => {
+      // Ensure each message has an id
+      const messageWithId = {
+        ...message,
+        id: message.id || `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+      };
+      
+      // Process assistant messages to remove code blocks
+      if (messageWithId.role === "assistant") {
+        return {
+          ...messageWithId,
+          content: removeCodeBlocks(messageWithId.content),
+        };
+      }
+      
+      return messageWithId;
+    });
+  }, [removeCodeBlocks]);
+
+  // Update displayMessages when messages change - complete rewrite
+  useEffect(() => {
+    // Skip if we're in certain states to prevent loops
+    if (apiErrorCount >= maxApiErrors) {
+      return;
+    }
+    
+    // Get processed messages
+    const processedMessages = formatDisplayMessages(messages);
+    
+    // Handle duplicate generating messages
+    let finalMessages = processedMessages;
+    if (isGeneratingCode) {
+      const generatingMessages = processedMessages.filter(
+        (msg: ExtendedMessage) => msg.role === 'assistant' && 
+        typeof msg.content === 'string' && 
+        msg.content.includes("I'm generating code based on your request")
+      );
+      
+      // Keep the first generating message, not just the last one
+      if (generatingMessages.length > 1) {
+        // Keep all non-generating messages
+        const nonGeneratingMessages = processedMessages.filter(
+          (msg: ExtendedMessage) => !(msg.role === 'assistant' && 
+          typeof msg.content === 'string' && 
+          msg.content.includes("I'm generating code based on your request"))
+        );
+        
+        // Keep the first generating message instead of the last
+        finalMessages = [
+          ...nonGeneratingMessages,
+          generatingMessages[0]
+        ];
+      }
+    }
+    
+    // Check for summary messages in the processed messages
+    const hasSummaryMessage = finalMessages.some(
+      (msg: ExtendedMessage) => 
+        msg.role === 'assistant' && 
+        typeof msg.content === 'string' && 
+        msg.content.includes("I've created a component based on your requirements")
+    );
+    
+    // If we have a summary message, ensure suggestions are shown
+    if (hasSummaryMessage && !showSuggestions) {
+      setShowSuggestions(true);
+    }
+    
+    setDisplayMessages(finalMessages);
+  }, [messages, isGeneratingCode, isLoading, apiErrorCount, formatDisplayMessages, showSuggestions]);
   
   // Handle the initial prompt if provided
   useEffect(() => {
@@ -174,6 +282,32 @@ export default function Chat({ id, initialMessages = [], initialPrompt, promptId
       })
     }
   }, [initialPrompt, isLoading, append])
+  
+  // Save app state to server
+  const saveAppState = async (updatedAppState: AppState) => {
+    try {
+      const response = await fetch(`/api/chat/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          appState: updatedAppState,
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error(`Error saving app state: ${response.status} ${response.statusText}`);
+        // Don't throw here - just log the error
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error saving app state:", error);
+      // Don't throw - return false to indicate failure
+      return false;
+    }
+  }
   
   // Fetch promptId from localStorage or sessionStorage if provided
   useEffect(() => {
@@ -255,16 +389,52 @@ export default function Chat({ id, initialMessages = [], initialPrompt, promptId
     }
   }, [input])
 
-  // Scroll to bottom when messages change, conditionally
-  useEffect(() => {
-    const container = scrollContainerRef.current
+  // Enhanced scroll event handler to only show/hide scroll button
+  const handleScroll = () => {
+    // Only check if we need to show the scroll to bottom button
+    const container = scrollContainerRef.current;
     if (container) {
-      const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 100 // 100px threshold
-      if (isScrolledToBottom || messages.length <= 1) { // Scroll if near bottom or it's the first message
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-      }
+      // If we're more than 300px from the bottom, show the button
+      const distanceFromBottom = container.scrollHeight - container.clientHeight - container.scrollTop;
+      setShowScrollToBottom(distanceFromBottom > 200);
     }
-  }, [displayMessages, messages.length]) // Added messages.length dependency
+  };
+
+  // Function to manually scroll to the bottom
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Add scroll event listener
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      
+      // Initial check for the scroll button
+      handleScroll();
+      
+      return () => {
+        container.removeEventListener('scroll', handleScroll);
+      };
+    }
+  }, []);
+
+  // Scroll to AI response when messages change
+  useEffect(() => {
+    // Only auto-scroll when not manually disabled and we have messages
+    if (!autoScrollDisabled && messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [messages.length, autoScrollDisabled]);
+
+  // Auto-scroll when generation completes
+  useEffect(() => {
+    if (justCompletedGeneration) {
+      scrollToBottom();
+      setJustCompletedGeneration(false);
+    }
+  }, [justCompletedGeneration]);
 
   // Custom submit handler
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -292,16 +462,24 @@ export default function Chat({ id, initialMessages = [], initialPrompt, promptId
       }
 
       // Save to server
-      await saveAppState(updatedAppState)
+      const saveResult = await saveAppState(updatedAppState);
+      
+      // Only update local state if save was successful or if we're in development mode
+      // This ensures UI stays responsive even if server save fails
+      setAppState(updatedAppState);
+      setOriginalCode(code);
+      setHasChanges(false);
 
-      setAppState(updatedAppState)
-      setOriginalCode(code)
-      setHasChanges(false)
-
-      // Force iframe refresh
-      setIframeKey((prev) => prev + 1)
+      // Only force iframe refresh if we're in preview tab
+      if (activeTab === "preview") {
+        setIframeKey((prev) => prev + 1);
+      }
+      
+      return saveResult;
     } catch (error) {
-      console.error("Error saving changes:", error)
+      console.error("Error saving changes:", error);
+      // Don't throw - just return false
+      return false;
     }
   }
 
@@ -311,220 +489,206 @@ export default function Chat({ id, initialMessages = [], initialPrompt, promptId
     setHasChanges(false)
   }
 
-  // Create HTML content for the iframe
-  const createHtmlContent = () => {
-    // Create a simplified version of the code that doesn't use imports/exports
-    let processedCode = code;
-    
-    // Check if there's an existing import for the VA component library CSS 
-    const hasVAImport = processedCode.includes("@department-of-veterans-affairs/component-library/dist/main.css");
-    
-    // Remove ALL import statements more aggressively
-    processedCode = processedCode.replace(/^\s*import\s+.*?['"]\s*;?\s*$/gm, '');
-    processedCode = processedCode.replace(/import\s+['"].*?['"]\s*;?\s*/g, '');
-    
-    // Remove export statements but keep the content
-    processedCode = processedCode.replace(/^\s*export\s+default\s+/gm, '');
-    processedCode = processedCode.replace(/^\s*export\s+/gm, '');
-    
-    // More thorough TypeScript type stripping
-    processedCode = processedCode
-      // Remove interface and type definitions
-      .replace(/^\s*interface\s+[\w\s<>,]*\{[^}]*\}\s*$/gm, '')
-      .replace(/^\s*type\s+[\w\s<>=,|&]*(?:=\s*\{[^}]*\})?;?\s*$/gm, '')
-      // Remove type annotations in variable declarations (like React.FC, etc)
-      .replace(/:\s*React\.FC(?:<[^>]*>)?\s*=/g, ' =')
-      .replace(/:\s*React\.FC(?:<[^>]*>)?\s*\(/g, ' (')
-      // More general TypeScript annotations replacements
-      .replace(/:\s*[\w\[\].<>|&(),{}]+\s*(?==)/g, ' =')
-      .replace(/:\s*[\w\[\].<>|&(),{}]+\s*(?=\()/g, ' ')
-      .replace(/:\s*[\w\[\].<>|&(),{}]+\s*(?={)/g, ' ')
-      // Remove generics in JSX and function calls
-      .replace(/<([A-Z][A-Za-z0-9]*)<.*?>(?=[\s(])/g, '<$1')
-      // Remove parameter type annotations
-      .replace(/\(([^)]*)\)\s*:\s*[\w\[\].<>|&(),{}]+/g, '($1)')
-      // Remove comments
-      .replace(/\/\/.*$/gm, '')
-      .replace(/\/\*[\s\S]*?\*\//g, '');
-    
-    // Look for React component pattern with improved regex
-    const componentRegex = /(?:const|function|class|var|let)\s+([A-Z][A-Za-z0-9_]*)\s*(?:=\s*(?:\([^)]*\)\s*=>|\(\))|[({])/g;
-    const matches = [...processedCode.matchAll(componentRegex)];
-    let mainComponentName = 'App';
-    
-    if (matches.length > 0) {
-      // Use the first capitalized component name found
-      mainComponentName = matches[0][1];
-      console.log(`Found component: ${mainComponentName}`);
-    } else {
-      // If no component is found, wrap the code in a component
-      processedCode = `
-function App() {
-  return (
-    <div className="va-app-container">
-      ${processedCode}
-    </div>
-  );
-}`;
-      mainComponentName = 'App';
-    }
-    
-    return `
-      <!DOCTYPE html>
-      <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>VA Prototype Preview</title>
-          
-          <!-- React and ReactDOM -->
-          <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-          <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-          <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-          
-          <!-- VA Components -->
-          <script src="https://unpkg.com/@department-of-veterans-affairs/component-library/dist/component-library.js"></script>
-          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@department-of-veterans-affairs/formation/dist/formation.min.css">
-          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@department-of-veterans-affairs/css-library/dist/stylesheets/utilities.css">
-          
-          <style>
-            html, body { 
-              margin: 0; 
-              padding: 0; 
-              font-family: 'Source Sans Pro', sans-serif;
-              background-color: white;
-              height: 100%;
-              width: 100%;
-            }
-            
-            #root {
-              min-height: 100%;
-              height: 100%;
-              display: flex;
-              flex-direction: column;
-            }
-            
-            #error-display {
-              position: absolute;
-              top: 0; left: 0; right: 0; bottom: 0;
-              background-color: white;
-              color: red;
-              padding: 20px;
-              font-family: monospace;
-              white-space: pre-wrap;
-              z-index: 1000;
-              overflow-y: auto;
-              display: none;
-            }
-            
-            /* VA components styling */
-            va-button, va-alert, va-accordion, va-breadcrumbs {
-              display: block;
-              margin: 1rem 0;
-            }
-            
-            /* Additional VA utility classes */
-            .vads-u-padding--2 { padding: 1rem !important; }
-            .vads-u-background-color--primary-darkest { background-color: #112e51 !important; }
-            .vads-u-color--white { color: white !important; }
-            
-            /* Existing VA utility classes... */
-          </style>
-        </head>
-        <body>
-          <div id="root"></div>
-          <div id="error-display"></div>
-          
-          <script type="text/babel" data-presets="react,typescript">
-            // Initialize VA components
-            if (window.defineCustomElements) {
-              window.defineCustomElements();
-            }
-            
-            // Set up error handling
-            window.onerror = function(message, source, lineno, colno, error) {
-              console.error("Error in preview:", error);
-              const errorDisplay = document.getElementById('error-display');
-              if (errorDisplay) {
-                errorDisplay.style.display = 'block';
-                errorDisplay.innerHTML = '<h2>Error in preview</h2><pre>' + 
-                  (error ? error.stack || error.toString() : message) + '</pre>';
-              }
-              return true;
-            };
-
-            // Make React and ReactDOM available globally in the script scope
-            const { createElement, useState, useEffect, useRef, useCallback, useMemo } = React;
-
-            // Predefine VA component references
-            const VAStylesProvider = ({ children }) => children;
-            const VAContentContainer = (props) => {
-              return createElement('div', { 
-                className: 'vads-l-grid-container', 
-                ...props 
-              });
-            };
-            
-            const VaButton = (props) => createElement('va-button', props);
-            const VaAlert = (props) => createElement('va-alert', props);
-            const VaAccordion = (props) => createElement('va-accordion', props);
-            const VaAccordionItem = (props) => createElement('va-accordion-item', props);
-            const VaTextInput = (props) => createElement('va-text-input', props);
-            const VaCheckbox = (props) => createElement('va-checkbox', props);
-            const VaRadio = (props) => createElement('va-radio', props);
-            const VaSelect = (props) => createElement('va-select', props);
-            const VaTextarea = (props) => createElement('va-textarea', props);
-
-            try {
-              // Debug the processed code to see what we're trying to execute
-              console.log("Executing code:", \`${processedCode}\`);
-              
-              // Execute the code from the editor
-              ${processedCode}
-              
-              // Render the component (defensive check for existence)
-              const container = document.getElementById('root');
-              if (!container) throw new Error('Root container not found');
-              
-              // Check if the component actually exists
-              if (typeof ${mainComponentName} === 'undefined') {
-                throw new Error('Component ${mainComponentName} not found in the processed code');
-              }
-              
-              ReactDOM.createRoot(container).render(
-                React.createElement(${mainComponentName})
-              );
-            } catch (err) {
-              console.error("Error rendering component:", err);
-              const errorDisplay = document.getElementById('error-display');
-              if (errorDisplay) {
-                errorDisplay.style.display = 'block';
-                errorDisplay.innerHTML = '<h2>Error rendering component</h2><pre>' + 
-                  (err ? err.stack || err.toString() : 'Unknown error') + '</pre>';
-              }
-            }
-          </script>
-        </body>
-      </html>
-    `;
-  }
-
   // Force refresh when switching to preview tab
   useEffect(() => {
     if (activeTab === "preview") {
-      // Force iframe refresh when switching to preview tab
-      setIframeKey((prev) => prev + 1)
+      // Only update iframeKey if it's the first time switching to preview
+      // or if code has changed since last preview
+      const codeChanged = hasChanges || code !== originalCode;
+      if (codeChanged) {
+        setIframeKey((prev) => prev + 1);
+      }
     }
-  }, [activeTab])
+  }, [activeTab, code, hasChanges, originalCode]);
+
+  // Function to generate a summary of what was created
+  const generateSummary = (code: string) => {
+    // Detect component types and structure from the code
+    const hasVAAlert = code.includes('VaAlert') || code.includes('va-alert');
+    const hasForm = code.includes('VaTextInput') || code.includes('va-text-input') || 
+                    code.includes('VaSelect') || code.includes('va-select') ||
+                    code.includes('VaCheckbox') || code.includes('va-checkbox');
+    const hasButton = code.includes('VaButton') || code.includes('va-button');
+    const hasStructure = code.includes('VAContentContainer') || code.includes('va-content-container');
+    
+    // Detect the component name if possible
+    let componentName = "component";
+    const componentMatch = code.match(/function\s+([A-Z][A-Za-z0-9_]*)/);
+    if (componentMatch && componentMatch[1]) {
+      componentName = componentMatch[1];
+    }
+    
+    let summary = `I've created the ${componentName} based on your requirements. `;
+    
+    // Add specific details about what was implemented
+    let details = [];
+    
+    if (hasStructure) {
+      details.push("VA's content container for proper layout structure");
+    }
+    
+    if (hasVAAlert) {
+      details.push("alert components for displaying important information");
+    }
+    
+    if (hasForm) {
+      details.push("form elements for user input");
+    }
+    
+    if (hasButton) {
+      details.push("interactive buttons for user actions");
+    }
+    
+    if (details.length > 0) {
+      summary += "The implementation includes " + details.join(", ") + ". ";
+    }
+    
+    summary += "You can see and edit the code in the Code panel, or switch to the Preview panel to see how it looks. ";
+    summary += "Would you like me to enhance any aspect of this component?";
+    
+    return summary;
+  }
+
+  // Function to handle clicking a suggested prompt
+  const handleSuggestedPrompt = (prompt: string) => {
+    // Set the input field to the suggested prompt
+    if (textareaRef.current) {
+      textareaRef.current.value = prompt;
+      
+      // Trigger the onChange event handler
+      const event = new Event('input', { bubbles: true });
+      textareaRef.current.dispatchEvent(event);
+      
+      // Update the input state directly
+      handleInputChange({ target: { value: prompt } } as React.ChangeEvent<HTMLTextAreaElement>);
+    }
+    
+    // Focus the textarea
+    textareaRef.current?.focus();
+  }
+
+  // Update code as the stream progresses
+  useEffect(() => {
+    // Skip processing if we've hit max errors
+    if (apiErrorCount >= maxApiErrors) {
+      return;
+    }
+    
+    if (isLoading && messages.length > 0) {
+      // Get the latest message which should be the one being streamed
+      const latestMessage = messages[messages.length - 1];
+      
+      if (latestMessage && latestMessage.role === 'assistant') {
+        // Extract code blocks in progress
+        const messageContent = typeof latestMessage.content === 'string'
+          ? latestMessage.content
+          : typeof latestMessage.content === 'object' && latestMessage.content !== null
+            ? JSON.stringify(latestMessage.content)
+            : String(latestMessage.content);
+        
+        // Prevent processing the same message content repeatedly
+        if (previousMessageRef.current === messageContent) {
+          return;
+        }
+        
+        // Update previous message ref
+        previousMessageRef.current = messageContent;
+        
+        // Check if message contains code block indicators
+        if (messageContent.includes("```")) {
+          // Set flag that we're generating code, but only if not already set
+          if (!isGeneratingCode) {
+            setIsGeneratingCode(true);
+            // Reset the processed flag when starting a new code generation
+            setCodeAlreadyProcessed(false);
+          }
+          
+          // Try to extract partial code
+          const partialCode = extractCodeFromMessage(messageContent);
+          if (partialCode !== null) {
+            // Update code in real-time as it streams
+            setCode(partialCode);
+            
+            // Show code tab while generating
+            if (activeTab !== "code") {
+              setActiveTab("code");
+            }
+          }
+        }
+      }
+    } else if (!isLoading && isGeneratingCode) {
+      // Only reset the flag when loading completes
+      setIsGeneratingCode(false);
+      // Clear previous message ref 
+      previousMessageRef.current = null;
+    }
+  }, [messages, isLoading, activeTab, isGeneratingCode, apiErrorCount]);
+
+  useEffect(() => {
+    // Clear API error count on successful completion
+    if (!isLoading && !error) {
+      setApiErrorCount(0);
+    }
+    
+    // Increment error count if there's an error
+    if (error && isLoading) {
+      setApiErrorCount(prev => Math.min(prev + 1, maxApiErrors));
+      console.log(`API error detected (${apiErrorCount + 1}/${maxApiErrors}): ${error.message}`);
+      
+      // If max errors reached, stop generation
+      if (apiErrorCount >= maxApiErrors - 1) {
+        setIsGeneratingCode(false);
+        setCodeAlreadyProcessed(false);
+        console.log("Max API errors reached, stopping generation attempts");
+      }
+    }
+  }, [error, isLoading]);
+
+  // Check for summary messages when loading completes
+  useEffect(() => {
+    // Only run this when loading just completed
+    if (!isLoading && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      
+      // Check if the last message contains a summary
+      if (lastMessage.role === 'assistant' && 
+          typeof lastMessage.content === 'string' && 
+          lastMessage.content.includes("I've created a component based on your requirements")) {
+        setShowSuggestions(true);
+      }
+      
+      // If this was the last message in a code generation sequence
+      if (lastMessage.role === 'assistant' && 
+          typeof lastMessage.content === 'string' && 
+          lastMessage.content.includes("```") && 
+          lastMessage.content.endsWith("```")) {
+        // There should be a summary message coming
+        console.log("Code generation completed, summary message should follow");
+        
+        // Force a scroll to bottom
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 1200); // Slightly longer than the timeout for the summary message (1000ms)
+      }
+    }
+  }, [isLoading, messages]);
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <VAHeader />
+    <div className="flex flex-col h-screen max-h-screen overflow-hidden">
+      {/* Minimized header with home navigation */}
+      <div className="flex-shrink-0 h-12 min-h-12 bg-[#112e51] flex items-center px-4 justify-between">
+        <div className="flex items-center">
+          <a href="/" className="text-white font-semibold text-lg mr-6">VA Prototyping Tool</a>
+          <a href="/" className="text-white hover:text-blue-200 text-sm mx-2">Home</a>
+          <a href="/components" className="text-white hover:text-blue-200 text-sm mx-2">Components</a>
+          <a href="/docs" className="text-white hover:text-blue-200 text-sm mx-2">Documentation</a>
+        </div>
+      </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Chat Section - 40% width */}
-        <div className="w-2/5 flex flex-col border-r">
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Chat Section - Scrollable */}
+        <div className="w-[35%] flex flex-col border-r relative">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollContainerRef}>
             {displayMessages.map((message, index) => (
               <div
                 key={message.id || `message-${index}`}
@@ -543,7 +707,7 @@ function App() {
             {isLoading && (
               <div className="bg-gray-100 p-4 rounded-lg flex items-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
-                <span>Generating response...</span>
+                <span>{isGeneratingCode ? "Generating code... Check the code panel to see progress." : "Generating response..."}</span>
               </div>
             )}
             {error && (
@@ -551,10 +715,49 @@ function App() {
                 <p>Error: {error.message || "Something went wrong. Please try again."}</p>
               </div>
             )}
+            
+            {/* Suggested prompts */}
+            {showSuggestions && !isLoading && messages.length > 0 && (
+              <div className="border rounded-lg p-3 bg-white">
+                <p className="text-sm font-medium mb-2 text-gray-700">Try asking:</p>
+                <div className="flex flex-col gap-2">
+                  <button 
+                    className="text-left px-3 py-2 bg-gray-50 hover:bg-blue-50 rounded-md text-sm transition-colors text-gray-700"
+                    onClick={() => handleSuggestedPrompt("Can you add a search filter to this component?")}
+                  >
+                    Can you add a search filter to this component?
+                  </button>
+                  <button 
+                    className="text-left px-3 py-2 bg-gray-50 hover:bg-blue-50 rounded-md text-sm transition-colors text-gray-700"
+                    onClick={() => handleSuggestedPrompt("Make the design more accessible by improving color contrast.")}
+                  >
+                    Make the design more accessible by improving color contrast.
+                  </button>
+                  <button 
+                    className="text-left px-3 py-2 bg-gray-50 hover:bg-blue-50 rounded-md text-sm transition-colors text-gray-700"
+                    onClick={() => handleSuggestedPrompt("Can you add responsive behavior for mobile devices?")}
+                  >
+                    Can you add responsive behavior for mobile devices?
+                  </button>
+                </div>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </div>
 
-          <form onSubmit={onSubmit} className="border-t p-4 flex items-center gap-2">
+          {/* Scroll to bottom button */}
+          {showScrollToBottom && (
+            <button
+              onClick={scrollToBottom}
+              className="absolute bottom-20 right-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-lg z-10 transition-all"
+              aria-label="Scroll to bottom"
+            >
+              <ArrowDown className="h-5 w-5" />
+            </button>
+          )}
+
+          <form onSubmit={onSubmit} className="border-t p-4 flex items-center gap-2 flex-shrink-0">
             <div className="relative flex-1">
               <textarea
                 ref={textareaRef}
@@ -579,12 +782,13 @@ function App() {
           </form>
         </div>
 
-        {/* Preview/Code Section - 60% width */}
-        <div className="w-3/5 flex flex-col">
-          <div className="bg-gray-100 border-b">
-            <div className="container mx-auto px-4 py-3">
+        {/* Preview/Code Section - Fixed */}
+        <div className="w-[65%] flex flex-col h-full">
+          {/* Header - Fixed */}
+          <div className="bg-gray-100 border-b flex-shrink-0 py-1">
+            <div className="container mx-auto px-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">VA Prototyping</h2>
+                <h2 className="text-lg font-medium">VA Prototyping</h2>
                 <div className="flex items-center space-x-2">
                   {hasChanges && (
                     <>
@@ -607,42 +811,43 @@ function App() {
             </div>
           </div>
 
-          {/* Custom Tab Navigation */}
-          <div className="bg-gray-100 border-b">
+          {/* Custom Tab Navigation - Fixed */}
+          <div className="bg-gray-100 border-b flex-shrink-0">
             <div className="container mx-auto px-4">
               <div className="flex">
                 <button
                   onClick={() => setActiveTab("preview")}
-                  className={`flex items-center gap-2 px-6 py-3 font-medium text-sm ${
+                  className={`flex items-center gap-2 px-6 py-2 font-medium text-sm ${
                     activeTab === "preview" ? "bg-white text-gray-900" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
+                  disabled={isGeneratingCode} // Disable preview tab while generating code
                 >
                   <Eye className="h-4 w-4" />
                   Preview
                 </button>
                 <button
                   onClick={() => setActiveTab("code")}
-                  className={`flex items-center gap-2 px-6 py-3 font-medium text-sm ${
+                  className={`flex items-center gap-2 px-6 py-2 font-medium text-sm ${
                     activeTab === "code" ? "bg-[#2563eb] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 >
                   <Code className="h-4 w-4" />
-                  Code
+                  Code {isGeneratingCode && <span className="ml-1 animate-pulse">•</span>}
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Content Area */}
-          <div className="flex-1 overflow-y-auto">
+          {/* Content Area - Using full viewport calculation */}
+          <div className="flex-1 h-full" style={{ height: "calc(100vh - 84px)" }}>
             {activeTab === "preview" && (
-              <div className="flex-1 bg-white">
+              <div className="h-full w-full bg-white overflow-auto">
                 <DynamicComponentPreview code={code} />
               </div>
             )}
 
             {activeTab === "code" && (
-              <div className="h-full p-1 ">
+              <div className="h-full w-full overflow-hidden">
                 {/* Render the ImprovedCodeEditor here */}
                 <ImprovedCodeEditor code={code} onChange={handleCodeChange} />
               </div>
@@ -651,7 +856,10 @@ function App() {
         </div>
       </div>
 
-      <VAFooter />
+      {/* Minimized footer - just 1 line instead of the full component */}
+      <div className="flex-shrink-0 h-6 min-h-6 bg-[#112e51] text-white text-xs py-1 px-4 text-center">
+        Official VA Prototyping Tool. For authorized use only.
+      </div>
     </div>
   )
 }

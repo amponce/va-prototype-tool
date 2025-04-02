@@ -1,48 +1,36 @@
 /**
- * Extracts code blocks from a message content
+ * Extracts code blocks from a message content, with support for streaming partial code blocks
  * @param content The message content to extract code from
- * @returns The extracted code or empty string if no code found
+ * @returns The extracted code or null if no code found
  */
-export function extractCodeFromMessage(content: string): string {
-  // If content is empty or undefined, return empty string
-  if (!content) return ""
-  
-  // Try to parse the content if it looks like JSON
-  if (content.startsWith('{') && content.endsWith('}')) {
-    try {
-      const parsed = JSON.parse(content);
-      // If it has a 'text' property that's a string, use that instead
-      if (parsed.text && typeof parsed.text === 'string') {
-        content = parsed.text;
-      }
-    } catch (e) {
-      // Not valid JSON, continue with original content
-    }
-  }
-  
-  // Extract code blocks with language specifier
-  const codeBlockRegex = /```(?:jsx|tsx|javascript|typescript|js|ts|react)?([\s\S]*?)```/g
-  let match
-  let extractedCode = ""
-
-  while ((match = codeBlockRegex.exec(content)) !== null) {
-    if (match[1] && match[1].trim()) {
-      extractedCode += match[1].trim() + "\n\n"
-    }
+export function extractCodeFromMessage(message: string): string | null {
+  // Ensure we have a string to work with
+  if (typeof message !== 'string') {
+    return null;
   }
 
-  // Clean up the extracted code
-  extractedCode = extractedCode.trim()
-
-  // If no code blocks found with the regex, try a more aggressive approach
-  if (!extractedCode) {
-    // Look for content between triple backticks
-    const fullCodeBlockMatch = content.match(/```([\s\S]*?)```/)
-    if (fullCodeBlockMatch && fullCodeBlockMatch[1]) {
-      extractedCode = fullCodeBlockMatch[1].trim()
+  try {
+    // Pattern to match code blocks without using 's' flag
+    // We'll use a multi-line approach instead
+    const codeBlockRegex = /```(?:jsx?|tsx?|javascript|typescript)?([\s\S]+?)```/;
+    const match = message.match(codeBlockRegex);
+    
+    if (match && match[1]) {
+      return match[1].trim();
     }
+    
+    // For streaming responses, handle incomplete code blocks
+    // Check if there's an opening code block tag but no closing one yet
+    const incompleteCodeBlockMatch = message.match(/```(?:jsx?|tsx?|javascript|typescript)?([\s\S]+)$/);
+    if (incompleteCodeBlockMatch && incompleteCodeBlockMatch[1]) {
+      // Return the partial code - helps with streaming
+      return incompleteCodeBlockMatch[1].trim();
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Error extracting code from message:", error);
+    return null;
   }
-
-  return extractedCode
 }
 
