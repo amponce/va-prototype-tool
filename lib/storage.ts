@@ -3,11 +3,13 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import type { Message } from "ai";
 
-// Define the path to the storage file
+// Define the path to the storage files
 const STORAGE_FILE_PATH = process.env.STORAGE_FILE_PATH || path.join(process.cwd(), 'data', 'chats.json');
+const PROMPTS_FILE_PATH = process.env.PROMPTS_FILE_PATH || path.join(process.cwd(), 'data', 'prompts.json');
 
 // Use in-memory fallback when file system operations fail (e.g., in serverless environments)
 let inMemoryStorage: { [chatId: string]: ChatMessage[] } = {};
+let inMemoryPrompts: { [chatId: string]: string } = {};
 let usingInMemory = false;
 
 // Type definitions
@@ -59,6 +61,10 @@ export interface ChatMessage {
 
 interface StorageData {
   [chatId: string]: ChatMessage[];
+}
+
+interface PromptsData {
+  [chatId: string]: string;
 }
 
 /**
@@ -249,4 +255,102 @@ export function getLatestAppState(messages: ExtendedMessage[] | ChatMessage[]): 
     }
   }
   return defaultAppState;
+}
+
+/**
+ * Read the prompts storage file
+ */
+async function readPromptsStorage(): Promise<PromptsData> {
+  try {
+    // Make the directory if it doesn't exist
+    await fs.mkdir(path.dirname(PROMPTS_FILE_PATH), { recursive: true });
+    
+    try {
+      // Try to read the existing file
+      const data = await fs.readFile(PROMPTS_FILE_PATH, 'utf8');
+      return JSON.parse(data);
+    } catch (readError) {
+      if ((readError as NodeJS.ErrnoException).code === 'ENOENT') {
+        // File doesn't exist, create an empty one
+        const emptyData: PromptsData = {};
+        await fs.writeFile(PROMPTS_FILE_PATH, JSON.stringify(emptyData));
+        return emptyData;
+      }
+      throw readError;
+    }
+  } catch (error) {
+    // Return empty object for in-memory fallback
+    console.error('Error reading prompts storage file:', error);
+    return {};
+  }
+}
+
+/**
+ * Write to the prompts storage file
+ */
+async function writePromptsStorage(data: PromptsData): Promise<void> {
+  try {
+    // Make the directory if it doesn't exist
+    await fs.mkdir(path.dirname(PROMPTS_FILE_PATH), { recursive: true });
+    
+    // Write the data to the file
+    await fs.writeFile(PROMPTS_FILE_PATH, JSON.stringify(data));
+  } catch (error) {
+    console.error('Error writing to prompts storage file:', error);
+    throw error;
+  }
+}
+
+/**
+ * Store a large prompt for a specific chat ID
+ */
+export async function storeLargePrompt(id: string, prompt: string): Promise<void> {
+  try {
+    const prompts = await readPromptsStorage();
+    
+    // Store the prompt
+    prompts[id] = prompt;
+    
+    await writePromptsStorage(prompts);
+  } catch (error: unknown) {
+    // Fallback to store in memory
+    inMemoryPrompts[id] = prompt;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`Falling back to in-memory storage for large prompt: ${errorMessage}`);
+  }
+}
+
+/**
+ * Retrieve a large prompt by chat ID
+ */
+export async function getLargePrompt(id: string): Promise<string | null> {
+  try {
+    const prompts = await readPromptsStorage();
+    
+    // Check if this specific prompt exists
+    if (!prompts[id]) {
+      return null;
+    }
+    
+    // Get the prompt
+    const prompt = prompts[id];
+    
+    // Delete after retrieval to save space
+    delete prompts[id];
+    await writePromptsStorage(prompts);
+    
+    return prompt;
+  } catch (error: unknown) {
+    // Fallback to retrieve from memory
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`Falling back to in-memory storage for large prompt retrieval: ${errorMessage}`);
+    
+    if (!inMemoryPrompts[id]) {
+      return null;
+    }
+    
+    const prompt = inMemoryPrompts[id];
+    delete inMemoryPrompts[id];
+    return prompt;
+  }
 }

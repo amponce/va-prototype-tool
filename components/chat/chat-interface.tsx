@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Send, Maximize, PaperclipIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { createChat } from "@/lib/chat-store"
+import { createChat, storeLargePromptAPI } from "@/lib/chat-store"
 
 export function ChatInterface() {
   const [input, setInput] = useState("")
@@ -70,8 +70,14 @@ export function ChatInterface() {
       // Create a new chat
       const chatId = await createChat()
 
-      // Navigate to the chat page with the initial message as a query parameter
-      router.push(`/chat/${chatId}?message=${encodeURIComponent(input)}`)
+      // For large prompts, store via API instead of the URL
+      if (input.length > 1000) {
+        await storeLargePromptAPI(chatId, input)
+        router.push(`/chat/${chatId}?useStoredPrompt=true`)
+      } else {
+        // Use URL parameter for smaller prompts
+        router.push(`/chat/${chatId}?message=${encodeURIComponent(input)}`)
+      }
     } catch (error) {
       console.error("Error creating chat:", error)
       setError("Failed to create chat. Please try again.")

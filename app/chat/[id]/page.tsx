@@ -6,10 +6,11 @@ export default async function Page({
   searchParams,
 }: {
   params: { id: string }
-  searchParams: { message?: string }
+  searchParams: { message?: string, useStoredPrompt?: string }
 }) {
   const { id } = params
   const initialMessage = searchParams.message
+  const useStoredPrompt = searchParams.useStoredPrompt === "true"
 
   try {
     // Load existing messages
@@ -27,6 +28,7 @@ export default async function Page({
         id={id}
         initialMessages={extendedMessages}
         initialPrompt={initialMessage ? decodeURIComponent(initialMessage) : undefined}
+        useStoredPrompt={useStoredPrompt}
       />
     )
   } catch (error) {

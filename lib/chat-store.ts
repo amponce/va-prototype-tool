@@ -176,3 +176,61 @@ export function getLatestAppState(messages: ExtendedMessage[]): AppState {
   return defaultAppState
 }
 
+// Store a large prompt via API
+export async function storeLargePromptAPI(id: string, prompt: string): Promise<void> {
+  try {
+    // Get the base URL for API requests
+    const baseUrl =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : "http://localhost:3000"
+
+    // Use absolute URL for API request
+    const response = await fetch(`${baseUrl}/api/prompt/store`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id, prompt }),
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to store large prompt")
+    }
+  } catch (error) {
+    console.error("Error storing large prompt:", error)
+    throw new Error("Failed to store large prompt")
+  }
+}
+
+// Retrieve a large prompt via API
+export async function getLargePromptAPI(id: string): Promise<string | null> {
+  try {
+    // Get the base URL for API requests
+    const baseUrl =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : "http://localhost:3000"
+
+    // Use absolute URL for API request
+    const response = await fetch(`${baseUrl}/api/prompt/retrieve/${id}`)
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null
+      }
+      throw new Error("Failed to retrieve large prompt")
+    }
+
+    const data = await response.json()
+    return data.prompt
+  } catch (error) {
+    console.error("Error retrieving large prompt:", error)
+    return null
+  }
+}
+

@@ -6,23 +6,30 @@ import { useChat } from "ai/react"
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Send, PaperclipIcon, Code, Eye, Save, Undo } from "lucide-react"
-import { getLatestAppState, type ExtendedMessage, type AppState } from "@/lib/chat-store"
+import { getLatestAppState, type ExtendedMessage, type AppState, getLargePromptAPI } from "@/lib/chat-store"
 import { VAHeader } from "@/components/va-specific/va-header"
 import { VAFooter } from "@/components/va-specific/va-footer"
 import { ImprovedCodeEditor } from "@/components/editors/improved-code-editor"
 import { extractCodeFromMessage } from "@/lib/code-extractor"
 import { DynamicComponentPreview } from "@/components/editors/dynamic-component-preview"
 
+// Function to generate unique IDs for messages
+function generateUniqueId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2)
+}
+
 interface ChatProps {
   id: string
   initialMessages?: ExtendedMessage[]
   initialPrompt?: string
+  useStoredPrompt?: boolean
 }
 
-export default function Chat({ id, initialMessages = [], initialPrompt }: ChatProps) {
+export default function Chat({ id, initialMessages = [], initialPrompt, useStoredPrompt = false }: ChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const initialPromptSentRef = useRef(false)
+  const storedPromptFetchedRef = useRef(false)
   const [activeTab, setActiveTab] = useState<"preview" | "code">("preview")
   const [hasChanges, setHasChanges] = useState(false)
   const [originalCode, setOriginalCode] = useState("")
@@ -156,16 +163,45 @@ export default function Chat({ id, initialMessages = [], initialPrompt }: ChatPr
     setDisplayMessages(newDisplayMessages)
   }, [messages])
 
-  // Handle initial prompt if provided
+  // Check for large prompts in API storage
   useEffect(() => {
-    if (initialPrompt && !initialPromptSentRef.current && messages.length === 0) {
+    // Only run on client-side and if we need to fetch a stored prompt
+    if (typeof window === 'undefined' || !useStoredPrompt || storedPromptFetchedRef.current) return;
+    
+    const fetchStoredPrompt = async () => {
+      try {
+        storedPromptFetchedRef.current = true;
+        
+        // Try to get the prompt from the API
+        const prompt = await getLargePromptAPI(id);
+        if (!prompt) return;
+        
+        // Set the stored prompt as the initial prompt
+        initialPromptSentRef.current = false; // Reset so we'll send this prompt
+        append({
+          id: generateUniqueId(),
+          content: prompt,
+          role: "user",
+        });
+      } catch (error) {
+        console.error("Error fetching stored prompt:", error);
+      }
+    };
+    
+    fetchStoredPrompt();
+  }, [id, useStoredPrompt, append]);
+  
+  // Handle the initial prompt if provided
+  useEffect(() => {
+    if (initialPrompt && !initialPromptSentRef.current && !isLoading) {
       initialPromptSentRef.current = true
       append({
-        role: "user",
+        id: generateUniqueId(),
         content: initialPrompt,
+        role: "user",
       })
     }
-  }, [initialPrompt, append, messages.length])
+  }, [initialPrompt, isLoading])
 
   // Auto-resize textarea
   useEffect(() => {

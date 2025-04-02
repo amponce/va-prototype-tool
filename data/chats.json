@@ -650,5 +650,34 @@
       }
     }
   ],
-  "d2959c35-2b2e-4942-a86d-77f2365113fd": []
+  "d2959c35-2b2e-4942-a86d-77f2365113fd": [],
+  "b0bea803-328a-4163-8f75-b389daa65e03": [],
+  "m907amep5bwuy4g1jn": [
+    {
+      "role": "user",
+      "content": "I want to build a healthcare landing page that serves as a comprehensive resource for veterans seeking medical assistance. At the top of the page, a prominent Banner component will display critical announcements, such as maintenance schedules or urgent health alerts, ensuring that users are immediately informed of any pressing updates. Below the banner, a Search Input will allow veterans to quickly find specific information or services related to their healthcare needs.",
+      "parts": [
+        {
+          "type": "text",
+          "text": "I want to build a healthcare landing page that serves as a comprehensive resource for veterans seeking medical assistance. At the top of the page, a prominent Banner component will display critical announcements, such as maintenance schedules or urgent health alerts, ensuring that users are immediately informed of any pressing updates. Below the banner, a Search Input will allow veterans to quickly find specific information or services related to their healthcare needs."
+        }
+      ]
+    },
+    {
+      "id": "msg-6gU4Vnnv0RAXIo3uCLM21lV8",
+      "role": "assistant",
+      "content": "{\"type\":\"text\",\"text\":\"To create a healthcare landing page for veterans with a Banner component for announcements and a Search Input for finding information, you can use the following React code. This code uses VA Design System components and ensures compliance with VA standards.\\n\\n```jsx\\nimport { VAStylesProvider } from \\\"@/app/va-styles\\\";\\nimport { VAContentContainer } from \\\"@/components/va-specific/va-content-container\\\";\\nimport { VaAlert, VaTextInput } from \\\"@department-of-veterans-affairs/component-library/dist/react-bindings\\\";\\nimport \\\"@department-of-veterans-affairs/component-library/dist/main.css\\\";\\n\\nexport default function HealthcareLandingPage() {\\n  return (\\n    <VAStylesProvider>\\n      <VAContentContainer>\\n        <VaAlert status=\\\"warning\\\" visible uswds>\\n          <h2 slot=\\\"headline\\\">Important Announcement</h2>\\n          <p>There will be scheduled maintenance on the healthcare portal this weekend. Please plan accordingly.</p>\\n        </VaAlert>\\n        \\n        <div className=\\\"vads-u-margin-top--4\\\">\\n          <VaTextInput\\n            label=\\\"Search for healthcare information\\\"\\n            uswds\\n            placeholder=\\\"Enter keywords or topics\\\"\\n          />\\n        </div>\\n      </VAContentContainer>\\n    </VAStylesProvider>\\n  );\\n}\\n```\\n\\n### Explanation:\\n- **VAStylesProvider**: Wraps the entire application to apply VA styles.\\n- **VAContentContainer**: Ensures proper layout and spacing for the content.\\n- **VaAlert**: Displays a prominent banner for critical announcements. The `status=\\\"warning\\\"` attribute is used to highlight the importance of the message.\\n- **VaTextInput**: Provides a search input field for users to find specific healthcare information. The `label` and `placeholder` attributes enhance accessibility and usability.\\n\\nThis setup ensures that the page is both informative and user-friendly, adhering to VA design and accessibility standards.\"}",
+      "appState": {
+        "code": "import { VAStylesProvider } from \"@/app/va-styles\";\nimport { VAContentContainer } from \"@/components/va-specific/va-content-container\";\nimport { VaAlert, VaTextInput } from \"@department-of-veterans-affairs/component-library/dist/react-bindings\";\nimport \"@department-of-veterans-affairs/component-library/dist/main.css\";\n\nexport default function HealthcareLandingPage() {\n  return (\n    <VAStylesProvider>\n      <VAContentContainer>\n        <VaAlert status=\"warning\" visible uswds>\n          <h2 slot=\"headline\">Important Announcement</h2>\n          <p>There will be scheduled maintenance on the healthcare portal this weekend. Please plan accordingly.</p>\n        </VaAlert>\n        \n        <div className=\"vads-u-margin-top--4\">\n          <VaTextInput\n            label=\"Search for healthcare information\"\n            uswds\n            placeholder=\"Enter keywords or topics\"\n          />\n        </div>\n      </VAContentContainer>\n    </VAStylesProvider>\n  );\n}",
+        "previewVisible": false,
+        "previewMode": "desktop",
+        "activeFile": "App.tsx",
+        "files": {
+          "App.tsx": "import React from 'react';\n\nexport default function App() {\n  return (\n    <div className=\"flex items-center justify-center min-h-screen bg-gray-100\">\n      <div className=\"bg-white p-8 rounded-lg shadow-md max-w-md w-full\">\n        <h1 className=\"text-2xl font-bold mb-4 text-center\">Welcome to VA Rapid Prototyping</h1>\n        <p className=\"text-gray-600 mb-6 text-center\">\n          Start by describing what you want to build in the chat.\n        </p>\n      </div>\n    </div>\n  );\n}"
+        }
+      }
+    }
+  ],
+  "54ef2cee-77d9-4f98-b8c7-280aac5814b6": [],
+  "ef1aee2f-dbfa-42d8-96d9-65e078e8b755": []
 }
