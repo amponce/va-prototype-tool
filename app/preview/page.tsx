@@ -1,12 +1,24 @@
 "use client"
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { VAStylesProvider } from "@/app/va-styles";
 import { VaButton, VaAlert } from "@department-of-veterans-affairs/component-library/dist/react-bindings";
 import "@department-of-veterans-affairs/component-library/dist/main.css";
 
-export default function PreviewPage() {
+// Loading component to show while the main component is suspended
+function PreviewLoading() {
+  return (
+    <div className="vads-u-padding--3">
+      <div className="vads-loader">
+        <span className="vads-u-sr-only">Loading component...</span>
+      </div>
+    </div>
+  );
+}
+
+// Internal component that uses useSearchParams
+function PreviewContent() {
   const searchParams = useSearchParams();
   const componentId = searchParams.get('id');
   const [Component, setComponent] = useState<React.ComponentType | null>(null);
@@ -99,6 +111,15 @@ export default function PreviewPage() {
     <VAStylesProvider>
       <Component />
     </VAStylesProvider>
+  );
+}
+
+// Main export with Suspense boundary
+export default function PreviewPage() {
+  return (
+    <Suspense fallback={<PreviewLoading />}>
+      <PreviewContent />
+    </Suspense>
   );
 }
 
