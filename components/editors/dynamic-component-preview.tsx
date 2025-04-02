@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { VAStylesProvider } from "@/app/va-styles"
+import { VAContentContainer } from "@/components/va-specific/va-content-container"
 import { VaButton, VaAlert } from "@department-of-veterans-affairs/component-library/dist/react-bindings"
 import './preview-styles.css'
 
@@ -29,20 +30,23 @@ export function DynamicComponentPreview({ code }: DynamicComponentPreviewProps) 
       
       // Create a fallback component that shows a static preview
       const FallbackComponent = () => (
-        <div className="vads-l-grid-container">
-          <header className="vads-u-padding--2 vads-u-background-color--primary-darkest vads-u-color--white">
-            <h1>Welcome to the VA Landing Page</h1>
-          </header>
-          <main className="vads-u-padding--2">
-            <VaAlert status="info" visible {...{ uswds: true } as any}>
-              <h2 slot="headline">Welcome to Our Service</h2>
-              <p>We are committed to providing the best service for our veterans.</p>
-            </VaAlert>
-            <div className="vads-u-margin-top--2">
-              <VaButton text="Get Started" {...{ uswds: true } as any} />
-            </div>
-          </main>
-        </div>
+        <VAStylesProvider>
+       
+            <header className="vads-u-padding--2 vads-u-background-color--primary-darkest vads-u-color--black">
+            <h1 className="vads-u-font-size--h2">Constitutional Rights Information Center</h1>
+            <p>Your resource for understanding your constitutional rights and how they apply to you as a veteran.</p>
+            </header>
+            <main className="vads-u-padding--2">
+              <VaAlert status="info" visible {...{ uswds: true } as any}>
+                <h2 slot="headline">Welcome to Our Service</h2>
+                <p>We are committed to providing the best service for our veterans.</p>
+              </VaAlert>
+              <div className="vads-u-margin-top--2">
+                <VaButton text="Get Started" {...{ uswds: true } as any} />
+              </div>
+            </main>
+  
+        </VAStylesProvider>
       );
       
       // For now, just use the fallback component
@@ -84,9 +88,7 @@ export function DynamicComponentPreview({ code }: DynamicComponentPreviewProps) 
   
   return (
     <div className="va-preview-container">
-      <VAStylesProvider>
-        <Component />
-      </VAStylesProvider>
+      <Component />
     </div>
   );
 } 

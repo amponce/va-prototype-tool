@@ -20,7 +20,7 @@ export default function PreviewPage() {
     document.body.appendChild(script);
 
     script.onload = () => {
-      if (window.customElements && window.customElements.define) {
+      if (window.customElements && typeof window.customElements.define === 'function') {
         // The components will auto-register themselves
         console.log('VA components loaded');
       }
